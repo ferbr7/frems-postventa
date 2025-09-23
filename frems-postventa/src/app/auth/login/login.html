@@ -1,0 +1,92 @@
+<div class="min-h-screen w-full bg-neutral-50 flex items-center justify-center p-4">
+  <div class="w-full max-w-5xl grid md:grid-cols-2 gap-6">
+
+    <!-- Branding / Lado izquierdo -->
+    <aside
+      class="relative rounded-3xl overflow-hidden bg-emerald-700 text-white shadow-2xl flex flex-col justify-between p-10">
+      <div>
+        <div class="flex items-center gap-4">
+          <img src="assets/Logo.jpg" alt="Perfumería FREM'S" class="h-12 w-auto rounded-md bg-white p-1 shadow" />
+          <div>
+            <p class="text-xs uppercase tracking-widest text-emerald-100">Sistema interno</p>
+            <h2 class="text-2xl font-semibold">Perfumería FREM'S</h2>
+          </div>
+        </div>
+
+        <p class="mt-8 text-emerald-100/90 leading-relaxed max-w-md">
+          Post-venta inteligente: Mantén el contacto, brinda experiencias personalizadas y no dejes pasar ninguna
+          oportunidad.
+        </p>
+      </div>
+
+      <!-- Tip -->
+      <div class="mt-auto bg-white/10 backdrop-blur-sm rounded-2xl p-4 ring-1 ring-white/15">
+        <h3 class="font-medium">Tip</h3>
+        <p class="text-sm text-emerald-50/90 mt-1">
+          Para restablecer tu acceso, usa el enlace “¿Olvidaste tu contraseña?”.
+        </p>
+      </div>
+
+
+      <p class="text-xs text-emerald-100/80 mt-6">© {{ currentYear }} Perfumería FREM'S</p>
+    </aside>
+
+    <!-- Formulario / Lado derecho -->
+    <main class="flex items-center">
+      <div class="w-full bg-white rounded-3xl shadow-lg p-10">
+        <header class="mb-8">
+          <h1 class="text-3xl font-semibold text-slate-900">Iniciar sesión</h1>
+          <p class="text-slate-600 mt-1">Bienvenido de vuelta, por favor inicia sesión.</p>
+        </header>
+
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+          <!-- Usuario -->
+          <div>
+            <label for="email" class="block text-sm font-medium text-slate-800">Usuario o correo</label>
+            <input id="email" type="text" formControlName="userOrEmail" class="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-4 py-3
+                          text-slate-900 placeholder-slate-400 outline-none
+                          focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
+              placeholder="ej. maria@frems.com">
+          </div>
+
+          <!-- Contraseña -->
+          <div>
+            <label for="password" class="block text-sm font-medium text-slate-800">Contraseña</label>
+            <div class="relative mt-2">
+              <input id="password" [type]="showPassword ? 'text' : 'password'" formControlName="password" class="block w-full rounded-lg border border-slate-200 bg-white px-4 py-3 pr-12
+                            text-slate-900 placeholder-slate-400 outline-none
+                            focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20" placeholder="••••••••">
+              <button type="button" (click)="togglePassword()"
+                class="absolute inset-y-0 right-0 px-3 text-slate-500 hover:text-slate-700">
+                {{ showPassword ? 'Ocultar' : 'Mostrar' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Recordarme + Olvidé -->
+          <div class="flex items-center justify-between">
+            <label class="inline-flex items-center gap-2 text-sm text-slate-800">
+              <input type="checkbox" formControlName="remember" class="h-4 w-4 rounded border-slate-300 text-emerald-600
+                            focus:ring-emerald-600 focus:ring-offset-0" />
+              Recuérdame
+            </label>
+
+            <a [routerLink]="['/forgot-password']" class="text-sm font-medium text-emerald-700 hover:text-emerald-800">
+              ¿Olvidaste tu contraseña?
+            </a>
+          </div>
+
+          <!-- Botón -->
+          <button type="submit" class="w-full rounded-lg bg-emerald-600 hover:bg-emerald-700
+                         text-white font-medium py-3 shadow-md transition">
+            Acceder
+          </button>
+
+          <p class="text-xs text-slate-500 text-center mt-4">
+            Al iniciar sesión, acéptas nuestros términos y la política de privacidad.
+          </p>
+        </form>
+      </div>
+    </main>
+  </div>
+</div>

@@ -1,0 +1,236 @@
+<div class="min-h-screen bg-neutral-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Topbar minimal -->
+   
+      <div class="rounded-2xl bg-gradient-to-r from-emerald-700 to-emerald-600 p-6 flex items-center justify-between">
+
+        <!-- Logo y nombre -->
+        <div class="flex items-center gap-3">
+          <img src="/assets/Logo.jpg" alt="FREM'S" class="h-12 w-auto rounded-md bg-white p-1 shadow" />
+          <div class="flex flex-col">
+            <span class="text-white text-lg font-semibold">Perfumería FREM'S</span>
+            <span class="text-emerald-100 text-xs mt-0.5">
+              {{ role === 'admin' ? 'Administrador' : 'Vendedor' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Controles -->
+        <div class="flex items-center gap-3">
+
+          <!-- Cambiar rol -->
+          <div class="flex items-center gap-2">
+            <button (click)="setRole('vendedor')"
+              class="text-sm px-3 py-1.5 rounded-lg border border-white/30 text-white hover:bg-white/10">
+              Vendedor
+            </button>
+            <button (click)="setRole('admin')"
+              class="text-sm px-3 py-1.5 rounded-lg border border-white/30 text-white hover:bg-white/10">
+              Admin
+            </button>
+          </div>
+
+          <!-- Notificaciones -->
+          <button class="p-2 rounded-lg hover:bg-white/10" aria-label="Notificaciones">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              class="text-white">
+              <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14v-3a6 6 0 1 0-12 0v3a2 2 0 0 1-.6 1.4L4 17h5" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+          </button>
+
+          <!-- Avatar -->
+          <div class="h-9 w-9 rounded-full bg-emerald-300/70 ring-2 ring-white/70"></div>
+        </div>
+      </div>
+   
+    <div class="mx-auto max-w-7xl px-4 py-8 grid grid-cols-12 gap-6">
+
+      <!-- Sidebar más limpio -->
+
+      <aside #sidebar class="hidden md:block col-span-3 lg:col-span-2">
+        <nav class="space-y-2">
+          <a *ngFor="let item of menu" [routerLink]="item.link" (mouseenter)="onEnter(item.link)"
+            class="group flex items-center gap-3 px-4 py-3 rounded-xl transition" [ngClass]="
+         isOn(item.link)
+           ? 'bg-emerald-600 text-white shadow-sm'
+           : 'text-neutral-800 hover:bg-emerald-50'
+       ">
+
+            <!-- Ícono -->
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg transition" [ngClass]="
+              isOn(item.link)
+                ? 'text-white'
+                : 'text-gray-500 group-hover:text-emerald-700'
+            ">
+
+              <!-- Home -->
+              <svg *ngIf="item.icon==='home'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 11l9-8 9 8" />
+                <path d="M4 10v10h16V10" />
+              </svg>
+
+              <!-- Ventas -->
+              <svg *ngIf="item.icon==='cart'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="21" r="1" />
+                <circle cx="20" cy="21" r="1" />
+                <path d="M1 1h4l2.7 12.4A2 2 0 0 0 9.6 15h7.8a2 2 0 0 0 2-1.6L22 6H6" />
+              </svg>
+
+              <!-- Clientes -->
+              <svg *ngIf="item.icon==='users'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.9" />
+                <path d="M16 3.1a4 4 0 0 1 0 7.8" />
+              </svg>
+
+              <!-- Productos -->
+              <svg *ngIf="item.icon==='bottle'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="3" width="6" height="3" rx="1" />
+                <path d="M12 6v2" />
+                <path d="M7 8h10a2 2 0 0 1 2 2v8a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-8a2 2 0 0 1 2-2z" />
+              </svg>
+
+              <!-- Reportes -->
+              <svg *ngIf="item.icon==='chart'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18" />
+                <path d="M7 13l3 3 7-7" />
+              </svg>
+
+              <!-- Recordatorios -->
+              <svg *ngIf="item.icon==='bell'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14v-3a6 6 0 1 0-12 0v3a2 2 0 0 1-.6 1.4L4 17h5" />
+                <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+              </svg>
+
+              <!-- Configuración -->
+              <svg *ngIf="item.icon==='settings'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.6 1.6 0 0 0 .3 1.7l.1.1-1.5 1.5-.1-.1a1.6 1.6 0 0 0-1.7-.3l-.2.1a1.6 1.6 0 0 0-1 1.5V21h-2v-.3a1.6 1.6 0 0 0-1-1.5l-.2-.1a1.6 1.6 0 0 0-1.7.3l-.1.1L5.7 17l.1-.1a1.6 1.6 0 0 0 .3-1.7l-.1-.2a1.6 1.6 0 0 0-1.5-1H4v-2h.3a1.6 1.6 0 0 0 1.5-1l.1-.2a1.6 1.6 0 0 0-.3-1.7l-.1-.1L7 5.7l.1.1a1.6 1.6 0 0 0 1.7.3l.2-.1a1.6 1.6 0 0 0 1-1.5V4h2v.3a1.6 1.6 0 0 0 1 1.5l.2.1a1.6 1.6 0 0 0 1.7-.3l.1-.1L18.3 7l-.1.1a1.6 1.6 0 0 0-.3 1.7l.1.2a1.6 1.6 0 0 0 1.5 1H20v2h-.3a1.6 1.6 0 0 0-1.5 1l-.1.2z" />
+              </svg>
+            </span>
+
+            <!-- Texto -->
+            <span class="font-medium">{{ item.label }}</span>
+          </a>
+        </nav>
+      </aside>
+
+
+      <!-- Main -->
+      <main class="col-span-12 md:col-span-9 lg:col-span-10 space-y-8">
+        <!-- KPIs minimal -->
+        <section class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div *ngFor="let k of kpis" class="rounded-xl bg-white p-5 shadow-sm border border-neutral-200">
+            <p class="text-sm text-neutral-600">{{ k.label }}</p>
+            <div class="mt-2 flex items-end justify-between">
+              <h3 class="text-2xl font-semibold text-neutral-900">{{ k.value }}{{ k.suffix }}</h3>
+              <span class="text-xs px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {{ k.trend }}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Acciones + Actividad -->
+        <section class="grid lg:grid-cols-3 gap-6">
+          <!-- Acciones rápidas -->
+          <div class="lg:col-span-1 space-y-3">
+            <h4 class="text-neutral-900 font-semibold">Acciones rápidas</h4>
+            <a *ngFor="let a of quickActions" [routerLink]="a.link" [class.hidden]="!a.roles.includes(role)"
+              class="flex items-center justify-between rounded-xl bg-white px-4 py-3 border border-neutral-200 hover:bg-neutral-50">
+              <span class="flex items-center gap-3 text-neutral-800 font-medium">
+                <span
+                  class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-neutral-100 text-neutral-700">
+                  <!-- iconitos: userPlus/cart/bottle/chart/users -->
+                  <svg *ngIf="a.icon==='userPlus'" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.8">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M19 8v6" />
+                    <path d="M22 11h-6" />
+                  </svg>
+                  <svg *ngIf="a.icon==='cart'" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.8">
+                    <circle cx="9" cy="21" r="1" />
+                    <circle cx="20" cy="21" r="1" />
+                    <path d="M1 1h4l2.68 12.39A2 2 0 0 0 9.62 15h7.76a2 2 0 0 0 2-1.61L22 6H6" />
+                  </svg>
+                  <svg *ngIf="a.icon==='bottle'" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.8">
+                    <path d="M9 3h6v3H9z" />
+                    <path d="M12 6v2" />
+                    <path d="M7 8h10a2 2 0 0 1 2 2v8a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-8a2 2 0 0 1 2-2z" />
+                  </svg>
+                  <svg *ngIf="a.icon==='chart'" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.8">
+                    <path d="M3 3v18h18" />
+                    <path d="M7 13l3 3 7-7" />
+                  </svg>
+                  <svg *ngIf="a.icon==='users'" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.8">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                </span>
+                {{ a.label }}
+              </span>
+              <span class="text-neutral-500">›</span>
+            </a>
+          </div>
+
+          <!-- Actividad reciente -->
+          <div class="lg:col-span-2 space-y-3">
+            <h4 class="text-neutral-900 font-semibold">Actividad reciente</h4>
+            <div class="rounded-xl bg-white border border-neutral-200 divide-y divide-neutral-200">
+              <div *ngFor="let r of activity" class="px-4 py-3 flex items-center justify-between">
+                <div>
+                  <p class="text-neutral-800">{{ r.what }}</p>
+                  <p class="text-xs text-neutral-500">{{ r.who }} • {{ r.when }}</p>
+                </div>
+                <span class="text-neutral-400">• • •</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Bloque admin -->
+        <section *ngIf="role==='admin'" class="space-y-3">
+          <h4 class="text-neutral-900 font-semibold">Panel administrador</h4>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="rounded-xl bg-white p-5 border border-neutral-200">
+              <h5 class="font-medium text-neutral-900">Top productos</h5>
+              <ul class="mt-3 space-y-2">
+                <li *ngFor="let p of topProducts" class="flex items-center justify-between">
+                  <span class="text-neutral-800">{{ p.name }}</span>
+                  <span class="text-neutral-600">{{ p.sales }} ventas</span>
+                </li>
+              </ul>
+            </div>
+            <div class="rounded-xl bg-white p-5 border border-neutral-200">
+              <h5 class="font-medium text-neutral-900">Usuarios & roles</h5>
+              <p class="text-neutral-600 text-sm mt-2">
+                Administra cuentas, asigna permisos y resetea contraseñas de tu equipo.
+              </p>
+              <a routerLink="/usuarios"
+                class="inline-flex mt-3 items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">
+                Ir a Usuarios
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>

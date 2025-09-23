@@ -1,0 +1,125 @@
+<div class="min-h-screen bg-neutral-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+
+    <!-- Encabezado -->
+    <div class="rounded-2xl bg-gradient-to-r from-emerald-700 to-emerald-600 p-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold text-white">Nuevo producto</h1>
+        <p class="text-emerald-100">Agrega un nuevo artículo al catálogo</p>
+      </div>
+      <button routerLink="/productos"
+              class="rounded-xl border border-emerald-200/50 bg-emerald-600/30 text-white px-4 py-2 hover:bg-emerald-600/40">
+        Volver
+      </button>
+    </div>
+
+    <!-- Formulario -->
+    <form [formGroup]="form" (ngSubmit)="guardar()"
+          class="mt-6 bg-white rounded-2xl border border-slate-200 shadow p-6">
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Nombre -->
+        <div class="md:col-span-2">
+          <label class="block text-slate-700 mb-2">Nombre</label>
+          <input type="text" formControlName="nombre"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" />
+          <div *ngIf="nombre?.touched && nombre?.invalid" class="text-sm text-rose-600 mt-1">
+            El nombre es obligatorio.
+          </div>
+        </div>
+
+        <!-- SKU -->
+        <div>
+          <label class="block text-slate-700 mb-2">SKU (opcional)</label>
+          <input type="text" formControlName="sku"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" />
+        </div>
+
+        <!-- Descripción -->
+        <div class="md:col-span-3">
+          <label class="block text-slate-700 mb-2">Descripción</label>
+          <textarea rows="4" formControlName="descripcion"
+                    class="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"></textarea>
+        </div>
+
+        <!-- Categoría -->
+        <div>
+          <label class="block text-slate-700 mb-2">Categoría</label>
+          <select formControlName="categoria"
+                  class="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+            <option *ngFor="let c of categorias" [ngValue]="c.id">{{ c.nombre }}</option>
+          </select>
+        </div>
+
+        <!-- Precio -->
+        <div>
+          <label class="block text-slate-700 mb-2">Precio</label>
+          <input type="number" min="0" step="0.01" formControlName="precio"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" />
+          <div *ngIf="precio?.touched && precio?.invalid" class="text-sm text-rose-600 mt-1">
+            Ingresá un precio válido.
+          </div>
+        </div>
+
+        <!-- Stock -->
+        <div>
+          <label class="block text-slate-700 mb-2">Stock</label>
+          <input type="number" min="0" step="1" formControlName="stock"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" />
+          <div *ngIf="stock?.touched && stock?.invalid" class="text-sm text-rose-600 mt-1">
+            Ingresá un stock válido.
+          </div>
+        </div>
+
+        <!-- Medida -->
+        <div>
+          <label class="block text-slate-700 mb-2">Medida</label>
+          <select formControlName="medida"
+                  class="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+            <option *ngFor="let m of medidas" [ngValue]="m.id">{{ m.nombre }}</option>
+          </select>
+        </div>
+
+        <!-- Estado -->
+        <div class="md:col-span-2">
+          <label class="block text-slate-700 mb-2">Estado</label>
+          <div class="flex items-center gap-3">
+            <label class="inline-flex items-center cursor-pointer">
+              <input type="checkbox" formControlName="estado" class="sr-only peer" />
+              <div
+                class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-emerald-600 transition relative">
+                <span
+                  class="absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition peer-checked:translate-x-5"></span>
+              </div>
+            </label>
+            <span class="text-slate-700 select-none">
+              {{ form.get('estado')?.value ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Imagen URL -->
+        <div>
+          <label class="block text-slate-700 mb-2">Imagen (URL) — opcional</label>
+          <input type="url" formControlName="imagenUrl"
+                 placeholder="https://…"
+                 class="w-full rounded-xl border border-slate-300 px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" />
+        </div>
+
+      </div>
+
+      <!-- Botón -->
+      <div class="mt-6 grid grid-cols-1 md:grid-cols-2">
+        <div class="col-span-1 md:col-span-2 flex">
+          <button type="submit"
+                  class="mx-auto w-full md:w-[calc(100%-theme(space.6))] md:max-w-none
+                         rounded-2xl bg-emerald-600 text-white text-lg font-medium
+                         px-6 py-2.5 hover:bg-emerald-700 transition">
+            Registrar producto
+          </button>
+        </div>
+      </div>
+    </form>
+
+  </div>
+</div>

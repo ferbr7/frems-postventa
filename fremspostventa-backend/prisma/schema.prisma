@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model roles {
+  idrol       Int        @id @default(autoincrement())
+  nombre      String     @unique @db.VarChar(50)
+  descripcion String     @db.VarChar(100)
+  usuarios    usuarios[]
+}
+
+model usuarios {
+  idusuario Int       @id @default(autoincrement())
+  nombre    String    @db.VarChar(100)
+  apellido  String    @db.VarChar(100)
+  email     String    @unique @db.VarChar(150)
+  username  String    @unique @db.VarChar(50)
+  password  String
+  activo    Boolean?  @default(true)
+  fechaalta DateTime? @default(now()) @db.Timestamp(6)
+  idrol     Int?
+  roles     roles?    @relation(fields: [idrol], references: [idrol], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([idrol])
+  @@index([activo])
+}

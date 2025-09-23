@@ -1,0 +1,123 @@
+<div class="min-h-screen bg-neutral-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Título -->
+    <div class="rounded-2xl bg-gradient-to-r from-emerald-700 to-emerald-600 p-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold text-white">Clientes</h1>
+        <p class="text-emerald-100">Administración de clientes y seguimiento</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+                <!-- Nuevo cliente -->
+        <button routerLink="/cliente/nuevo"
+          class="rounded-xl bg-white text-emerald-700 px-4 py-2 hover:bg-emerald-50 shadow-sm">
+          + Nuevo cliente
+        </button>
+        <!-- Volver -->
+        <button routerLink="/home"
+          class="rounded-xl border border-emerald-200/50 bg-emerald-600/30 text-white px-4 py-2 hover:bg-emerald-600/40">
+          Volver
+        </button>
+      </div>
+    </div>
+
+    <!-- Búsqueda -->
+    <div class="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3 max-w-md mb-4">
+      <div class="relative w-full md:max-w-lg">
+        <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-500" fill="none"
+          stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-3.5-3.5" />
+        </svg>
+        <input type="text" [(ngModel)]="busqueda" (ngModelChange)="onSearchChange()"
+          placeholder="Buscar por nombre, correo o teléfono"
+          class="w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 py-2.5 text-slate-900 placeholder-slate-400 outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 shadow-sm" />
+      </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
+      <table class="w-full text-left border-collapse">
+        <!-- Encabezado con degradado (mismo estilo del topbar) -->
+        <thead class="bg-gradient-to-r from-emerald-700 to-emerald-600">
+          <tr class="text-white text-sm">
+            <th class="px-6 py-3 font-medium">Cliente</th>
+            <th class="px-6 py-3 font-medium">Correo</th>
+            <th class="px-6 py-3 font-medium">Teléfono</th>
+            <th class="px-6 py-3 font-medium">Última compra</th>
+            <th class="px-6 py-3 font-medium text-center">Compras</th>
+            <th class="px-6 py-3 font-medium text-center">Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let c of paginados()" class="border-b last:border-0 hover:bg-emerald-50/30 transition">
+            <td class="px-6 py-4 font-medium text-slate-800">{{ c.nombre }}</td>
+            <td class="px-6 py-4 text-slate-700">{{ c.correo }}</td>
+            <td class="px-6 py-4 text-slate-700">{{ c.telefono }}</td>
+            <td class="px-6 py-4 text-slate-700">{{ c.ultimaCompra }}</td>
+            <td class="px-6 py-4 text-center">
+              <span
+                class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
+                {{ c.compras }}
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center justify-center gap-2">
+                <button (click)="verDetalle(c)"
+                  class="rounded-xl border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
+                  Ver
+                </button>
+                <button (click)="abrirIA(c)"
+                  class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm text-emerald-700 hover:bg-emerald-100">
+                  IA
+                </button>
+                <button class="rounded-xl border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
+                  Editar
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="paginados().length === 0">
+            <td colspan="6" class="px-6 py-10 text-center text-slate-500">
+              No hay resultados para la búsqueda.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginado -->
+    <div class="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div class="text-sm text-slate-600">
+        Mostrando {{ showingFrom() }} – {{ showingTo() }} de {{ total() }} clientes
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 text-sm text-slate-600">
+          <span>Mostrar</span>
+          <select [(ngModel)]="pageSizeValue" (ngModelChange)="onPageSizeChange($event)" class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700
+                   focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+            <option *ngFor="let opt of pageSizeOptions" [ngValue]="opt">{{ opt }}</option>
+          </select>
+          <span>por página</span>
+        </div>
+
+        <div class="flex items-center gap-1">
+          <button (click)="prevPage()" [disabled]="page() === 1"
+            class="px-3 py-1.5 rounded-md border border-slate-300 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50">‹</button>
+
+          <button *ngFor="let n of [].constructor(totalPages()); let idx = index" (click)="goTo(idx+1)"
+            [class.bg-emerald-600]="page() === (idx+1)" [class.text-white]="page() === (idx+1)"
+            class="px-3 py-1.5 rounded-md border border-slate-300 text-sm text-slate-700 hover:bg-slate-50">
+            {{ idx+1 }}
+          </button>
+
+          <button (click)="nextPage()" [disabled]="page() === totalPages()"
+            class="px-3 py-1.5 rounded-md border border-slate-300 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50">›</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

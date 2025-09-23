@@ -1,0 +1,61 @@
+<div class="max-w-7xl mx-auto px-6 py-8">
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold text-slate-900">Usuarios</h1>
+      <p class="text-slate-600">Administración de usuarios</p>
+    </div>
+    <a routerLink="/usuarios/nuevo" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">
+      + Nuevo usuario
+    </a>
+  </div>
+
+  <div class="mb-4">
+    <input type="text" (input)="onSearch($any($event.target).value)" placeholder="Buscar por nombre, email o usuario"
+           class="w-full max-w-md rounded-xl border border-slate-300 px-3 py-2" />
+  </div>
+
+  <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow">
+    <table class="w-full text-left">
+      <thead class="bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-sm">
+        <tr>
+          <th class="px-6 py-3">Nombre</th>
+          <th class="px-6 py-3">Usuario</th>
+          <th class="px-6 py-3">Correo</th>
+          <th class="px-6 py-3 text-center">Rol</th>
+          <th class="px-6 py-3 text-center">Estado</th>
+          <th class="px-6 py-3 text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let u of items()" class="border-b hover:bg-emerald-50/30">
+          <td class="px-6 py-4">{{ u.nombre }} {{ u.apellido }}</td>
+          <td class="px-6 py-4">{{ u.username }}</td>
+          <td class="px-6 py-4">{{ u.email }}</td>
+          <td class="px-6 py-4 text-center">
+            <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+              {{ u.roles?.nombre || (u.idrol === 1 ? 'admin' : 'vendedor') }}
+            </span>
+          </td>
+          <td class="px-6 py-4 text-center">
+            <span [class]="'rounded-full px-2.5 py-1 text-xs font-medium ' + (u.activo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600')">
+              {{ u.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td class="px-6 py-4">
+            <div class="flex justify-center gap-2">
+              <a [routerLink]="['/usuarios', u.idusuario, 'editar']" class="rounded-xl border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">Editar</a>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="items().length === 0">
+          <td colspan="6" class="px-6 py-10 text-center text-slate-500">Sin resultados.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-6 flex items-center justify-end gap-2">
+    <button (click)="prev()" class="px-3 py-1.5 rounded-md border border-slate-300 text-sm hover:bg-slate-50">‹</button>
+    <button (click)="next()" class="px-3 py-1.5 rounded-md border border-slate-300 text-sm hover:bg-slate-50">›</button>
+  </div>
+</div>
