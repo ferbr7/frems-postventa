@@ -17,37 +17,38 @@ export interface UsuarioDTO {
 export class UsersService {
   private api = 'http://localhost:4000/api/usuarios';
 
-  constructor(private http: HttpClient) {}
-
-  list(opts: { page?:number; limit?:number; search?:string; idrol?:number; activo?:boolean } = {}) {
-    let p = new HttpParams();
-    Object.entries(opts).forEach(([k, v]) => {
-      if (v !== undefined && v !== null && v !== '') p = p.set(k, String(v));
-    });
-    return this.http.get<{ ok:boolean; page:number; limit:number; total:number; items:UsuarioDTO[] }>(this.api, { params: p });
-  }
+  constructor(private http: HttpClient) { }
 
   get(id: number) {
-    return this.http.get<{ ok:boolean; user:UsuarioDTO }>(`${this.api}/${id}`);
+    return this.http.get<{ ok: boolean; user: UsuarioDTO }>(`${this.api}/${id}`);
   }
 
   create(payload: any) {
-    return this.http.post<{ ok:boolean; user:UsuarioDTO }>(this.api, payload);
+    return this.http.post<{ ok: boolean; user: UsuarioDTO }>(this.api, payload);
   }
 
-  update(id:number, payload:any) {
-    return this.http.put<{ ok:boolean; user:UsuarioDTO }>(`${this.api}/${id}`, payload);
+  update(id: number, payload: any) {
+    return this.http.put<{ ok: boolean; user: UsuarioDTO }>(`${this.api}/${id}`, payload);
   }
 
-  changePassword(id:number, newPassword:string) {
-    return this.http.patch<{ ok:boolean; message:string }>(`${this.api}/${id}/password`, { newPassword });
+  changePassword(id: number, newPassword: string) {
+    return this.http.patch<{ ok: boolean; message: string }>(`${this.api}/${id}/password`, { newPassword });
   }
 
-  changeState(id:number, activo:boolean) {
-    return this.http.patch<{ ok:boolean; user: Pick<UsuarioDTO,'idusuario'|'activo'> }>(`${this.api}/${id}/estado`, { activo });
+  changeState(id: number, activo: boolean) {
+    return this.http.patch<{ ok: boolean; user: Pick<UsuarioDTO, 'idusuario' | 'activo'> }>(`${this.api}/${id}/estado`, { activo });
   }
 
-  remove(id:number) {
-    return this.http.delete<{ ok:boolean; message:string }>(`${this.api}/${id}`);
+  remove(id: number) {
+    return this.http.delete<{ ok: boolean; message: string }>(`${this.api}/${id}`);
+  }
+  list(p: { page: number; limit: number; search?: string }) {
+    const params: any = { page: p.page, limit: p.limit };
+    if (p.search) params.search = p.search;
+    return this.http.get(`${this.api}`, { params });
+  }
+
+  setEstado(id: number, activo: boolean) {
+    return this.http.patch(`${this.api}/${id}/estado`, { activo });
   }
 }

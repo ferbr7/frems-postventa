@@ -14,11 +14,11 @@ import { UsuariosFormComponent } from './usuarios/usuarios-form/usuarios-form';
 
 
 export const routes: Routes = [
-  { path: 'login',  component: LoginComponent },
-  { path: 'home',  component: HomeComponent },
+  { path: 'login', component: LoginComponent },
+  { path: 'home', component: HomeComponent },
 
   { path: 'forgot-password', component: ForgotPasswordComponent },
-  { path: 'reset-password', component: ResetPasswordComponent},
+  { path: 'reset-password', component: ResetPasswordComponent },
 
   // Clientes
   { path: 'clientes', component: ClientesComponent },
@@ -27,19 +27,19 @@ export const routes: Routes = [
   { path: 'clientes/:id/editar', component: ClientesComponent },
 
   // Usuarios
-  {path: 'usuario/nuevo', component: UsuarioNuevoComponent},
-  {path: 'usuarios', component: UsuariosListComponent},
-  {path: 'usuarios/nuevo', component: UsuariosFormComponent},
-  {path: 'usuarios:is/editar', component: UsuariosFormComponent},
+  { path: 'usuarios', component: UsuariosListComponent },
+  { path: 'usuarios/nuevo', component: UsuariosFormComponent },
+  { path: 'usuarios/:id/editar', component: UsuariosFormComponent },
+  { path: 'usuarios/:id/ver', component: UsuariosFormComponent },
 
   // Ventas
-  {path: 'venta/nueva', component: VentaNuevaComponent},
+  { path: 'venta/nueva', component: VentaNuevaComponent },
 
   // Productos
-  {path: 'producto/nuevo', component: ProductoNuevoComponent},
+  { path: 'producto/nuevo', component: ProductoNuevoComponent },
 
   // Reportes
-  {path: 'reportes', component: ReportesComponent},
+  { path: 'reportes', component: ReportesComponent },
 
   // IA (lazy)
   {
