@@ -21,4 +21,24 @@ CREATE TABLE usuarios (
 
 INSERT INTO roles (nombre, descripcion) VALUES ('admin','Tiene acceso total al sistema, incluyendo la gestión de usuarios, productos y ventas'), ('vendedor','Puede gestionar clientes, registrar ventas y consultar recomendaciones IA');
 
-Select * from roles;
+Select * from usuarios;
+select * from roles;
+
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'usuarios';
+
+ALTER TABLE usuarios
+ALTER COLUMN fechaalta TYPE DATE USING fechaalta::DATE,
+ALTER COLUMN fechaalta SET DEFAULT CURRENT_DATE;
+
+// Creación de indices
+
+
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'public' AND table_name IN ('usuarios', 'roles');
+
+SELECT COUNT(*) FROM public.roles;
+SELECT COUNT(*) FROM public.usuarios;
+
+SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'roles';

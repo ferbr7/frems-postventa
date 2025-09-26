@@ -22,7 +22,7 @@ model usuarios {
   username  String    @unique @db.VarChar(50)
   password  String
   activo    Boolean?  @default(true)
-  fechaalta DateTime? @default(now()) @db.Timestamp(6)
+  fechaalta DateTime? @default(dbgenerated("CURRENT_DATE")) @db.Date
   idrol     Int?
   roles     roles?    @relation(fields: [idrol], references: [idrol], onDelete: NoAction, onUpdate: NoAction)
 
