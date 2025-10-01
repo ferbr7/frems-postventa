@@ -1,0 +1,73 @@
+<div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="rounded-2xl bg-gradient-to-r from-emerald-700 to-emerald-600 p-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold text-white">Entrada de Inventario</h1>
+            <p class="text-emerald-100">Agrega stock a un producto del inventario</p>
+        </div>
+        <div class="flex gap-3">
+            <button (click)="nuevo()"
+                class="rounded-xl bg-white text-emerald-700 px-4 py-2 hover:bg-emerald-50 shadow-sm">
+                + Nuevo Producto
+            </button>
+            <a routerLink="/productos"
+                class="rounded-xl border border-emerald-200/50 bg-emerald-600/30 text-white px-4 py-2 hover:bg-white/10">
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <form (ngSubmit)="save()" [formGroup]="form"
+        class="mt-6 bg-white rounded-2xl border border-slate-200 shadow p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Producto -->
+        <div class="md:col-span-2">
+            <label class="block text-slate-700 mb-2">Producto *</label>
+            <select formControlName="idproducto" class="w-full rounded-xl border border-slate-300 px-4 py-2.5"
+                [disabled]="productoBloqueado">
+                <option [ngValue]="0">Selecciona una opción</option>
+                <option *ngFor="let p of productos" [ngValue]="p.id">{{ p.label }}</option>
+            </select>
+            <p class="text-sm text-rose-600 mt-1"
+                *ngIf="form.get('idproducto')?.touched && form.get('idproducto')?.invalid">
+                Requerido.
+            </p>
+            <p class="text-xs text-slate-500 mt-1" *ngIf="!productoBloqueado">Si no encuentras el producto, crea uno
+                desde “+ Nuevo Producto”.</p>
+        </div>
+
+        <!-- Cantidad -->
+        <div>
+            <label class="block text-slate-700 mb-2">Cantidad *</label>
+            <input type="number" min="1" step="1" formControlName="cantidad"
+                class="w-full rounded-xl border border-slate-300 px-4 py-2.5">
+        </div>
+
+        <!-- Fecha -->
+        <div>
+            <label class="block text-slate-700 mb-2">Fecha entrada *</label>
+            <input type="date" formControlName="fechaentrada"
+                class="w-full rounded-xl border border-slate-300 px-4 py-2.5">
+        </div>
+
+        <!-- Costo -->
+        <div>
+            <label class="block text-slate-700 mb-2">Precio costo *</label>
+            <input type="number" min="0" step="0.01" formControlName="preciocosto"
+                class="w-full rounded-xl border border-slate-300 px-4 py-2.5">
+        </div>
+
+        <!-- Proveedor -->
+        <div>
+            <label class="block text-slate-700 mb-2">Proveedor</label>
+            <input formControlName="proveedor" class="w-full rounded-xl border border-slate-300 px-4 py-2.5"
+                placeholder="Opcional">
+        </div>
+
+        <!-- Botón -->
+        <div class="md:col-span-2">
+            <button type="submit"
+                class="w-full rounded-2xl bg-emerald-600 text-white text-lg font-medium px-6 py-2.5 hover:bg-emerald-700">
+                Registrar Entrada de Inventario
+            </button>
+        </div>
+    </form>
+</div>

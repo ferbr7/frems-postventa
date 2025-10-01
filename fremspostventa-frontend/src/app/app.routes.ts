@@ -4,13 +4,17 @@ import { LoginComponent } from './auth/login/login';
 import { ForgotPasswordComponent } from './auth/forgot-password/forgot-password';
 import { ClientesComponent } from './clientes/clientes';
 import { ClienteNuevoComponent } from './cliente-nuevo/cliente-nuevo';
-import { UsuarioNuevoComponent } from './usuario-nuevo/usuario-nuevo';
 import { VentaNuevaComponent } from './ventas/venta-nueva/venta-nueva';
 import { ProductoNuevoComponent } from './productos/producto-nuevo/producto-nuevo';
 import { ReportesComponent } from './reportes/reportes';
 import { ResetPasswordComponent } from './auth/recuperar-reset/recuperar-reset';
 import { UsuariosListComponent } from './usuarios/usuarios-list/usuarios-list';
 import { UsuariosFormComponent } from './usuarios/usuarios-form/usuarios-form';
+import { ClientesListComponent } from './clientes/clientes-list/clientes-list';
+import { ClientesFormComponent } from './clientes/clientes-form/clientes-form';
+import { ProductosListComponent } from './productos/productos-list/productos-list';
+import { ProductosFormComponent } from './productos/productos-form/productos-form';
+import { EntradaInventarioFormComponent } from './inventario/entrada-form/entrada-form';
 
 
 export const routes: Routes = [
@@ -21,10 +25,10 @@ export const routes: Routes = [
   { path: 'reset-password', component: ResetPasswordComponent },
 
   // Clientes
-  { path: 'clientes', component: ClientesComponent },
-  { path: 'cliente/nuevo', component: ClienteNuevoComponent },
-  { path: 'clientes/:id', component: ClientesComponent },
-  { path: 'clientes/:id/editar', component: ClientesComponent },
+  { path: 'clientes', component: ClientesListComponent },
+  { path: 'clientes/nuevo', component: ClientesFormComponent },
+  { path: 'clientes/:id/editar', component: ClientesFormComponent },
+  { path: 'clientes/:id/ver', component: ClientesFormComponent },
 
   // Usuarios
   { path: 'usuarios', component: UsuariosListComponent },
@@ -37,9 +41,15 @@ export const routes: Routes = [
 
   // Productos
   { path: 'producto/nuevo', component: ProductoNuevoComponent },
+  { path: 'inventario/entrada/nuevo', component: EntradaInventarioFormComponent},
 
   // Reportes
   { path: 'reportes', component: ReportesComponent },
+  {path: 'productos', component: ProductosListComponent},
+  {path:'productos/nuevo', component: ProductosFormComponent},
+  {path:'productos/:id/editar', component: ProductosFormComponent},
+  {path:'productos/:id/ver', component: ProductosFormComponent},
+
 
   // IA (lazy)
   {

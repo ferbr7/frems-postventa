@@ -14,83 +14,77 @@ import { of, Observable } from 'rxjs';
   templateUrl: './usuarios-form.html',
 })
 export class UsuariosFormComponent implements OnInit {
-  private fb     = inject(FormBuilder);
-  private route  = inject(ActivatedRoute);
+  private fb = inject(FormBuilder);
+  private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private api    = inject(UsersService);
-  private http   = inject(HttpClient);
+  private api = inject(UsersService);
+  private http = inject(HttpClient);
 
   private readonly API = 'http://localhost:4000/api';
 
-  // ---- estado / modo ----
-  id     = 0;
+  id = 0;
   isEdit = false;
   isView = false;
 
-  // en "nuevo" se auto-sugiere username
   autoUsername = true;
 
-  // Evita recargas duplicadas
   private lastState = { id: 0, isView: false };
 
   form = this.fb.group({
-    nombre:    ['', [Validators.required]],
-    apellido:  ['', [Validators.required]],
-    email:     ['', [Validators.required, Validators.email]],
-    // username deshabilitado pero requerido; se envía con getRawValue()
-    username:  [{ value: '', disabled: true }, [Validators.required]],
-    password:  [''],                 // requerido sólo en crear
-    idrol:     [3, [Validators.required]],
-    activo:    [true],
-    fechaalta: [new Date().toISOString().substring(0, 10)], // yyyy-MM-dd
+    nombre: ['', [Validators.required]],
+    apellido: ['', [Validators.required]],
+    email: ['', [Validators.required, Validators.email]],
+    username: [{ value: '', disabled: true }, [Validators.required]],
+    password: [''],
+    idrol: [3, [Validators.required]],
+    activo: [true],
+    fechaalta: [this.todayLocal(), [Validators.required]],
   });
 
+  private todayLocal(): string {
+    const t = new Date();
+    const y = t.getFullYear();
+    const m = String(t.getMonth() + 1).padStart(2, '0');
+    const d = String(t.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
   ngOnInit() {
     this.recomputeModeFromRoute();
 
-    // Recalcular en cada navegación (el componente puede reciclarse)
     this.router.events
       .pipe(rxFilter(e => e instanceof NavigationEnd))
       .subscribe(() => this.recomputeModeFromRoute());
 
-    // configurar autosugerencia (sólo en "nuevo")
     this.setupAutoUsername();
   }
 
-  /** Soporta /usuarios/:id/ver y /usuarios/:id/editar (o :accion) */
   private recomputeModeFromRoute() {
-    // 1) Buscar id en toda la jerarquía
     const idParam = this.route.pathFromRoot
       .map(r => r.snapshot.paramMap.get('id'))
       .find(v => !!v);
     this.id = idParam ? Number(idParam) : 0;
 
-    // 2) Buscar 'accion' como param (si declaraste :accion / :mode)
     let accion = this.route.pathFromRoot
       .map(r => r.snapshot.paramMap.get('accion') || r.snapshot.paramMap.get('mode'))
       .find(v => !!v) || '';
 
-    // 3) Si no hay :accion como param, tomar el último segmento real de la URL
     if (!accion) {
       const segs = this.route.pathFromRoot.flatMap(r => r.snapshot.url.map(s => s.path));
       accion = segs[segs.length - 1] || ''; // 'ver' | 'editar' | 'nuevo' | ...
     }
 
-    // 4) Resolver modo desde el segmento
     this.isView = accion === 'ver';
     this.isEdit = accion === 'editar';
 
-    // 5) Auto-username sólo en "nuevo"
     this.autoUsername = !this.isView && !this.isEdit;
 
-    // 6) (Des)habilitar form según modo
     if (this.isView) {
       this.form.disable();
-  
+
       this.form.get('password')?.reset('');
     } else {
       this.form.enable();
-      // En editar: solo permitir rol, activo, fechaalta
+
       if (this.isEdit) {
         this.form.get('nombre')?.disable({ emitEvent: false });
         this.form.get('apellido')?.disable({ emitEvent: false });
@@ -104,7 +98,6 @@ export class UsuariosFormComponent implements OnInit {
       }
     }
 
-    // 7) Cargar usuario si aplica y cambió id o modo
     this.loadUserIfNeeded();
   }
 
@@ -136,7 +129,7 @@ export class UsuariosFormComponent implements OnInit {
   private setupAutoUsername() {
     if (!this.autoUsername) return;
 
-    const nombreCtrl   = this.form.get('nombre')!;
+    const nombreCtrl = this.form.get('nombre')!;
     const apellidoCtrl = this.form.get('apellido')!;
 
     nombreCtrl.valueChanges
@@ -151,7 +144,7 @@ export class UsuariosFormComponent implements OnInit {
   private trySuggestUsername() {
     if (!this.autoUsername) return;
 
-    const nombre   = (this.form.get('nombre')?.value || '').trim();
+    const nombre = (this.form.get('nombre')?.value || '').trim();
     const apellido = (this.form.get('apellido')?.value || '').trim();
     if (!nombre || !apellido) return;
 
@@ -207,37 +200,33 @@ export class UsuariosFormComponent implements OnInit {
     return loop();
   }
 
-  // ------------------ Guardar ------------------
   save() {
-    if (this.isView) return;       // no guarda en modo ver
+    if (this.isView) return;
     if (this.form.invalid) return;
 
     if (this.isEdit) {
-      // En edición solo permitimos actualizar: idrol, activo, fechaalta
       const { idrol, activo, fechaalta, email } = this.form.getRawValue() as any;
-      const payload = { idrol, activo, fechaalta, email }; // filtra campos críticos
+      const payload = { idrol, activo, fechaalta, email };
 
       this.api.update(this.id, payload).subscribe(() => this.router.navigate(['/usuarios']));
       return;
     }
 
-    // Crear: enviamos todo (incluye username y password)
     const payload: any = this.form.getRawValue();
     if (!payload.password) { alert('Contraseña requerida'); return; }
     this.api.create(payload).subscribe(() => this.router.navigate(['/usuarios']));
   }
 
-  // --- Título dinámico (prioriza 'ver' sobre 'editar') ---
   get title() {
-    if (this.isView) return 'Ver usuario';
+    if (this.isView) return 'Vista usuario';
     if (this.isEdit) return 'Editar usuario';
     return 'Nuevo usuario';
   }
 
   // --- Subtítulo dinámico ---
   get subtitle() {
-    if (this.isView) return 'Visualiza la información del usuario.';
-    if (this.isEdit) return 'Edita los datos necesarios y guarda los cambios.';
+    if (this.isView) return 'Consulta la información del usuario.';
+    if (this.isEdit) return 'Actualiza los datos de este usuario.';
     return 'Completa los campos para agregar un nuevo usuario.';
   }
 }

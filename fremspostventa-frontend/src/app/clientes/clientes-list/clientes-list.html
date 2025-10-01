@@ -1,0 +1,146 @@
+<div class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Header -->
+    <div class="rounded-2xl bg-gradient-to-r from-emerald-700 to-emerald-600 p-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold text-white">Clientes</h1>
+            <p class="text-emerald-100">Administración de clientes y seguimiento</p>
+        </div>
+        <div class="flex gap-3">
+            <a routerLink="/clientes/nuevo"
+                class="rounded-xl bg-white text-emerald-700 px-4 py-2 hover:bg-emerald-50 shadow-sm">
+                + Nuevo cliente
+            </a>
+            <a routerLink="/"
+                class="rounded-xl border border-emerald-200/60 bg-emerald-600/30 text-white px-4 py-2 hover:bg-white/10">
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Buscador -->
+    <div class="mt-6">
+        <div class="relative w-full md:max-w-lg">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </span>
+            <input
+                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-emerald-500"
+                type="text" placeholder="Buscar por nombre, correo o teléfono" [(ngModel)]="search"
+                (ngModelChange)="onSearchChange()" />
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <table class="min-w-full">
+            <thead class="bg-gradient-to-r from-emerald-700 to-emerald-600">
+                <tr class="text-white text-sm">
+                    <th class="px-6 py-3 font-medium">Cliente</th>
+                    <th class="px-6 py-3 font-medium">Teléfono</th>
+                    <th class="px-6 py-3 font-medium">Correo</th>
+                    <th class="px-6 py-3 font-medium">Última compra</th>
+                    <th class="px-6 py-3 font-medium">Compras</th>
+                    <th class="px-6 py-3 font-medium">Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody *ngIf="(items$ | async) as items">
+                <!-- Loading -->
+                <tr *ngIf="loading">
+                    <td class="px-6 py-10 text-center text-slate-500" colspan="6">Cargando…</td>
+                </tr>
+
+                <!-- Sin datos -->
+                <tr *ngIf="!loading && !items.length">
+                    <td class="px-6 py-10 text-center text-slate-500" colspan="6">No se encontraron clientes.</td>
+                </tr>
+
+                <!-- Filas -->
+                <tr *ngFor="let c of items" class="border-t border-slate-100" [class.hidden]="loading || !items.length">
+                    <!-- Cliente -->
+                    <td class="px-6 py-4">
+                        <div class="font-medium text-slate-900">{{ c.nombre }} {{ c.apellido }}</div>
+                    </td>
+
+                    <!-- Teléfono -->
+                    <td class="px-6 py-4 text-slate-700">
+                        {{ c.telefono }}
+                    </td>
+
+                    <!-- Correo -->
+                    <td class="px-6 py-4 text-slate-700">
+                        {{ c.email || '—' }}
+                    </td>
+
+                    <!-- Última compra -->
+                    <td class="px-6 py-4 text-slate-700">
+                        {{ c.ultimacompra ? (c.ultimacompra | date:'dd/MM/yyyy') : '—' }}
+                    </td>
+
+                    <!-- Compras -->
+                    <td class="px-6 py-4">
+                        <span
+                            class="inline-flex items-center rounded-full border border-emerald-200 text-emerald-700 px-2.5 py-0.5 text-sm">
+                            {{ (0) }}
+                        </span>
+                    </td>
+
+                    <!-- Acciones -->
+                    <td class="px-6 py-4 text-right">
+                        <div class="inline-flex gap-2">
+                            <button (click)="ver(c)"
+                                class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">
+                                Ver
+                            </button>
+                            <button (click)="ia(c)"
+                                class="rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 px-3 py-1.5 hover:bg-emerald-100">
+                                IA
+                            </button>
+                            <button (click)="editar(c)"
+                                class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">
+                                Editar
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="mt-4 flex items-center justify-between text-sm text-slate-600">
+        <div>
+            Mostrando
+            <span class="font-medium">{{ (page-1)*limit + ( (items$ | async)?.length ? 1 : 0) }}</span>
+            –
+            <span class="font-medium">{{ (page-1)*limit + ((items$ | async)?.length || 0) }}</span>
+            de
+            <span class="font-medium">{{ total }}</span>
+            clientes
+        </div>
+
+        <div class="flex items-center gap-3">
+            <label class="flex items-center gap-2">
+                Mostrar
+                <select class="rounded-lg border border-slate-300 px-2 py-1" [(ngModel)]="limit"
+                    (change)="changePageSize()">
+                    <option [ngValue]="5">5</option>
+                    <option [ngValue]="10">10</option>
+                    <option [ngValue]="25">25</option>
+                </select>
+                por página
+            </label>
+
+            <div class="flex items-center gap-2">
+                <button class="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50" (click)="prevPage()"
+                    [disabled]="page===1">‹</button>
+                <span class="min-w-[2rem] text-center font-medium">{{ page }}</span>
+                <button class="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50" (click)="nextPage()"
+                    [disabled]="page>=pageCount()">›</button>
+            </div>
+        </div>
+    </div>
+</div>

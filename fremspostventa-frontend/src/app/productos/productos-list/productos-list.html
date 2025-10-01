@@ -1,0 +1,126 @@
+<div class="min-h-screen bg-neutral-50">
+    <div class="max-w-7xl mx-auto px-6 py-8">
+
+        <div class="rounded-2xl bg-gradient-to-r from-emerald-700 to-emerald-600 p-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-semibold text-white">Productos</h1>
+                <p class="text-emerald-100">Administración de productos</p>
+            </div>
+            <div class="flex gap-3">
+                <button (click)="nuevo()"
+                    class="rounded-xl bg-white text-emerald-700 px-4 py-2 hover:bg-emerald-50 shadow-sm">
+                    + Nuevo Producto
+                </button>
+                <a routerLink="/home"
+                    class="rounded-xl border border-emerald-200/60 bg-emerald-600/30 text-white px-4 py-2 hover:bg-white/10">
+                    Volver
+                </a>
+            </div>
+        </div>
+
+        <!-- Buscador -->
+        <div class="mt-6">
+            <div class="relative w-full md:max-w-lg">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
+                <input
+                    class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-emerald-500"
+                    type="text" placeholder="Buscar por nombre, categoría o medida" [(ngModel)]="search"
+                    (ngModelChange)="onSearchChange()" />
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <table class="min-w-full">
+                <thead class="bg-gradient-to-r from-emerald-700 to-emerald-600">
+                    <tr class="text-white text-sm">
+                        <th class="px-6 py-3 font-medium">Nombre</th>
+                        <th class="px-6 py-3 font-medium">Categoría</th>
+                        <th class="px-6 py-3 font-medium">Medida</th>
+                        <th class="px-6 py-3 font-medium">Precio</th>
+                        <th class="px-6 py-3 font-medium">Stock</th>
+                        <th class="px-6 py-3 font-medium">Estado</th>
+                        <th class="px-6 py-3 font-medium">Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody *ngIf="(items$ | async) as items">
+                    <!-- loading -->
+                    <tr *ngIf="loading">
+                        <td class="px-6 py-10 text-center text-slate-500" colspan="7">Cargando…</td>
+                    </tr>
+
+                    <!-- sin datos -->
+                    <tr *ngIf="!loading && !items.length">
+                        <td class="px-6 py-10 text-center text-slate-500" colspan="7">No se encontraron productos.</td>
+                    </tr>
+
+                    <!-- filas -->
+                    <tr *ngFor="let p of items" class="border-t border-slate-100"
+                        [class.hidden]="loading || !items.length">
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-slate-900">{{ p.nombre }}</div>
+                        </td>
+                        <td class="px-6 py-4 text-slate-700">{{ p.categoria || '—' }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ p.medida || '—' }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ p.precioventa | currency:'GTQ':'symbol-narrow':'1.2-2'
+                            }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ p.stock }}</td>
+
+                        <td class="px-6 py-4">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" [checked]="p.activo"
+                                    (change)="toggleEstado(p)">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-500 rounded-full peer dark:bg-gray-700
+                     peer-checked:after:translate-x-full peer-checked:after:border-white
+                     after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all
+                     peer-checked:bg-emerald-600"></div>
+                                <span class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform
+                             peer-checked:translate-x-5"></span>
+                            </label>
+                            <span class="ml-2 text-sm" [class.text-emerald-700]="p.activo"
+                                [class.text-red-500]="!p.activo">
+                                {{ p.activo ? 'Activo' : 'Inactivo' }}
+                            </span>
+                        </td>
+
+                        <td class="px-6 py-4 text-right">
+                            <div class="inline-flex gap-2">
+                                <button (click)="ver(p)"
+                                    class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">
+                                    Ver
+                                </button>
+                                <button (click)="entrada(p)"
+                                    class="rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 px-3 py-1.5 hover:bg-emerald-100">
+                                    Stock +
+                                </button>
+                                <button (click)="editar(p)"
+                                    class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">
+                                    Editar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div class="mt-4 flex items-center justify-between text-sm text-slate-600">
+            <div>Mostrando {{ showingFrom }} – {{ showingTo }} de {{ total }} productos</div>
+            <div class="flex items-center gap-2">
+                <button class="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50" (click)="prevPage()"
+                    [disabled]="page===1">‹</button>
+                <span class="min-w-[2rem] text-center font-medium">{{ page }}</span>
+                <button class="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50" (click)="nextPage()"
+                    [disabled]="page>=pageCount()">›</button>
+            </div>
+        </div>
+
+    </div>
+</div>

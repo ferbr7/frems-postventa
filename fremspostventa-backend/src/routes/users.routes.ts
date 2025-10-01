@@ -5,10 +5,7 @@ import { Prisma } from '@prisma/client';
 
 const router = Router();
 
-/**
- * GET /api/usuarios
- * ?page=1&limit=10&search=texto&idrol=1&activo=true
- */
+//Método get - consultar usuarios
 router.get('/', async (req, res) => {
   try {
     const page = parseInt((req.query.page as string) ?? '1', 10);
@@ -53,6 +50,7 @@ router.get('/', async (req, res) => {
   }
 });
 
+//Método get - sugerir username
 router.get('/exists', async (req, res) => {
   try {
     const username = String(req.query.username ?? '').trim();
@@ -102,7 +100,7 @@ router.get('/suggest-username', async (req, res) => {
   }
 });
 
-/** GET /api/usuarios/:id */
+//Método get - buscar por id usuario
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -121,7 +119,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-/** POST /api/usuarios */
+//Método post - crear usuario
 router.post('/', async (req, res) => {
   try {
     const { nombre, apellido, email, username, password, idrol, activo, fechaalta } = req.body;
@@ -148,8 +146,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-/** PUT /api/usuarios/:id (sin cambiar password aquí) */
-
+//Método put - actualizar usuario
 router.put('/:id', async (req, res) => {
   console.log('PUT /usuarios/:id', { id: req.params.id, body: req.body }); 
   try {
@@ -191,7 +188,7 @@ router.put('/:id', async (req, res) => {
       data.fechaalta = dUtc;
     }
 
-    // email (validación de duplicado con 409)
+    // email
     if (email) {
       const current = await prisma.usuarios.findUnique({
         where: { idusuario: id },
@@ -241,8 +238,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-
-/** PATCH /api/usuarios/:id/password */
+//Método patch - cambio de contraseña
 router.patch('/:id/password', async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -261,7 +257,7 @@ router.patch('/:id/password', async (req, res) => {
   }
 });
 
-/** PATCH /api/usuarios/:id/estado  (activar/desactivar) */
+//Método patch - cambiar estado
 router.patch('/:id/estado', async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -278,7 +274,7 @@ router.patch('/:id/estado', async (req, res) => {
   }
 });
 
-/** DELETE /api/usuarios/:id (borrado real; si prefieres soft, cambia a activo=false) */
+//Método delete - eliminar el usuario
 router.delete('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
