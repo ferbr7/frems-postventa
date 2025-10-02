@@ -12,6 +12,7 @@ export interface Cliente {
   direccion: string;
   fechaingreso: string;   // ISO 'YYYY-MM-DD' desde el back
   ultimacompra: string | null;
+  compras: number;
 }
 
 @Injectable({ providedIn: 'root' })

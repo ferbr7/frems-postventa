@@ -6,6 +6,7 @@ import usersRouter from './routes/users.routes';
 import { clientesRouter } from './routes/clientes.routes';
 import { productosRouter } from './routes/productos.routes';
 import { inventarioRouter } from './routes/inventario.routes';
+import { ventasRouter } from './routes/ventas.routes';
 
 
 const app = express();
@@ -37,6 +38,9 @@ app.use('/api/clientes', clientesRouter);
 //Ruta para productos
 app.use('/api/productos', productosRouter);
 app.use('/api/inventario', inventarioRouter);
+
+// Ruta para ventas
+app.use('/api/ventas', ventasRouter);
 
 // 404 controlado
 app.use((_req, res) => {

@@ -1,0 +1,137 @@
+<div class="min-h-screen bg-neutral-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+
+    <!-- Encabezado -->
+    <div class="rounded-2xl bg-gradient-to-r from-emerald-700 to-emerald-600 p-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold text-white">{{ title }}</h1>
+        <p class="text-emerald-100">{{ subtitle }}</p>
+      </div>
+      <div class="flex gap-3">
+        <button *ngIf="isView" (click)="imprimir()"
+          class="rounded-xl bg-white text-emerald-700 px-4 py-2 hover:bg-emerald-50 shadow-sm">
+          Imprimir
+        </button>
+        <a routerLink="/ventas"
+          class="rounded-xl border border-emerald-200/60 bg-emerald-600/30 text-white px-4 py-2 hover:bg-white/10">
+          Volver
+        </a>
+      </div>
+    </div>
+
+    <!-- Formulario -->
+    <form (ngSubmit)="save()" [formGroup]="form"
+      class="mt-6 bg-white rounded-2xl border border-slate-200 shadow p-6 space-y-6">
+
+      <!-- Cliente / Fecha -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-slate-700 mb-2">Cliente *</label>
+          <select formControlName="idcliente" class="w-full rounded-xl border border-slate-300 px-4 py-2.5">
+            <option [ngValue]="0">Selecciona un cliente</option>
+            <option *ngFor="let c of clientes" [ngValue]="c.id">{{ c.label }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-700 mb-2">Fecha *</label>
+          <input formControlName="fecha" type="date" class="w-full rounded-xl border border-slate-300 px-4 py-2.5">
+        </div>
+      </div>
+
+      <!-- Productos -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-slate-800 font-medium">Productos</h3>
+          <button *ngIf="!isView" type="button" (click)="addItem()"
+            class="rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 px-3 py-1.5 hover:bg-emerald-100">
+            + Agregar producto
+          </button>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 divide-y">
+          <!-- Encabezados -->
+          <div class="grid grid-cols-12 gap-3 p-4 text-sm font-medium text-slate-600">
+            <div class="col-span-5">Producto</div>
+            <div class="col-span-2">Cantidad</div>
+            <div class="col-span-2">Precio</div>
+            <div class="col-span-2">Descuento %</div>
+            <div class="col-span-1 text-right">Subtotal</div>
+          </div>
+
+          <!-- Líneas -->
+          <ng-container formArrayName="items">
+            <div *ngFor="let g of items.controls; let i = index" class="grid grid-cols-12 gap-3 p-4 items-center"
+              [formGroupName]="i">
+              <div class="col-span-5">
+                <div class="flex items-center gap-3">
+                  <select formControlName="idproducto" class="w-full h-11 rounded-xl border border-slate-300 px-3">
+                    <option [ngValue]="0">Selecciona un producto</option>
+                    <option *ngFor="let p of productos" [ngValue]="p.id">{{ p.label }}</option>
+                  </select>
+                  <span class="text-xs text-slate-500 whitespace-nowrap">
+                    Stock: {{ g.get('_stock')?.value || 0 }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="col-span-2">
+                <input type="number" min="1" step="1" formControlName="cantidad"
+                  class="w-full h-11 rounded-xl border border-slate-300 px-3">
+              </div>
+
+              <div class="col-span-2">
+                <input type="number" min="0" step="0.01" formControlName="precio"
+                  class="w-full h-11 rounded-xl border border-slate-300 px-3">
+              </div>
+
+              <div class="col-span-2">
+                <input type="number" min="0" max="100" step="0.01" formControlName="desc_pct"
+                  class="w-full h-11 rounded-xl border border-slate-300 px-3">
+              </div>
+
+              <div class="col-span-1 text-right">
+                <div class="text-sm font-medium">Q {{ subtotalLinea(i) | number:'1.2-2' }}</div>
+                <button *ngIf="!isView" type="button" (click)="removeItem(i)"
+                  class="mt-2 rounded-lg border border-slate-300 px-2 py-1 hover:bg-slate-50">
+                  Quitar
+                </button>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- Notas + Totales -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-slate-700 mb-2">Notas</label>
+          <textarea formControlName="notas" rows="3"
+            class="w-full rounded-xl border border-slate-300 px-4 py-2.5"></textarea>
+        </div>
+
+        <div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-2">
+            <div class="flex justify-between">
+              <span>Subtotal</span>
+              <span>Q {{ subtotal() | number:'1.2-2' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Descuento</span>
+              <span>- Q {{ descuentoTotal() | number:'1.2-2' }}</span>
+            </div>
+            <div class="border-t pt-2 flex justify-between font-semibold text-slate-900">
+              <span>Total</span>
+              <span>Q {{ total() | number:'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guardar -->
+      <button *ngIf="!isView" type="submit"
+        class="w-full rounded-2xl bg-emerald-600 text-white text-lg font-medium px-6 py-2.5 hover:bg-emerald-700">
+        Registrar venta
+      </button>
+    </form>
+  </div>
+</div>

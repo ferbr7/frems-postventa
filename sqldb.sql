@@ -41,6 +41,40 @@ CREATE TABLE IF NOT EXISTS productos (
   fechaalta              DATE NOT NULL DEFAULT CURRENT_DATE
 );
 
+CREATE TABLE IF NOT EXISTS ventas (
+  idventa       SERIAL PRIMARY KEY,
+  fecha         DATE NOT NULL DEFAULT CURRENT_DATE,             -- sin zona horaria
+  subtotal      NUMERIC(12,2) NOT NULL CHECK (subtotal >= 0),
+  descuentot    NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (descuentot >= 0),
+  total         NUMERIC(12,2) NOT NULL CHECK (total >= 0),
+  notas         TEXT,
+  estado        VARCHAR(20) NOT NULL DEFAULT 'registrada' 
+                 CHECK (estado IN ('registrada','cancelada')),
+  idcliente     INT REFERENCES clientes(idcliente) ON UPDATE CASCADE ON DELETE SET NULL,
+  idusuario     INT REFERENCES usuarios(idusuario) ON UPDATE CASCADE ON DELETE SET NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS ventas_detalle (
+  iddetalle       SERIAL PRIMARY KEY,
+  idventa         INT NOT NULL REFERENCES ventas(idventa) ON DELETE CASCADE,
+  idproducto      INT NOT NULL REFERENCES productos(idproducto) ON UPDATE CASCADE,
+  cantidad        INT NOT NULL CHECK (cantidad > 0),
+  precio_unit     NUMERIC(12,2) NOT NULL CHECK (precio_unit >= 0),  -- precio pactado en ese momento
+  desc_pct        NUMERIC(5,2)  NOT NULL DEFAULT 0 CHECK (desc_pct >= 0 AND desc_pct <= 100),
+  subtotal_linea  NUMERIC(12,2) NOT NULL CHECK (subtotal_linea >= 0) -- cantidad*precio*(1-desc/100)
+);
+
+
+-- Indeces para ventas
+CREATE INDEX IF NOT EXISTS idx_ventas_fecha      ON ventas (fecha);
+CREATE INDEX IF NOT EXISTS idx_ventas_idcliente  ON ventas (idcliente);
+CREATE INDEX IF NOT EXISTS idx_ventas_idusuario  ON ventas (idusuario);
+
+-- Indices para ventas detalle
+CREATE INDEX IF NOT EXISTS idx_vdet_idventa    ON ventas_detalle (idventa);
+CREATE INDEX IF NOT EXISTS idx_vdet_idproducto ON ventas_detalle (idproducto);
+
 ALTER TABLE productos
 ADD COLUMN IF NOT EXISTS fechamod timestamptz NOT NULL DEFAULT now();
 
@@ -90,7 +124,14 @@ INSERT INTO roles (nombre, descripcion) VALUES ('admin','Tiene acceso total al s
 Select * from usuarios;
 select * from roles;
 select * from clientes;
+select * from ventas;
 
+
+SELECT idcliente, COUNT(*) 
+FROM ventas 
+WHERE idcliente IS NOT NULL AND (estado = 'registrada' OR estado IS NULL)
+GROUP BY idcliente
+ORDER BY 2 DESC;
 
 -- Creación de indices tabla usuarios
 
@@ -130,3 +171,5 @@ INSERT INTO productos (sku, nombre, descripcion, categoria, medida, precioventa,
 ('EDP-U-100-009','Eau de Parfum Oud 100ml','Oud intenso con ámbar y vainilla','Fragancias U','100ml',650.00,6,TRUE),
 ('EDP-M-030-010','Eau de Parfum Rosas 30ml','Bouquet de rosas con musk suave','Fragancias M','30ml',210.00,22,TRUE);
 
+
+CREATE INDEX IF NOT EXISTS idx_ventas_idcliente ON ventas(idcliente);

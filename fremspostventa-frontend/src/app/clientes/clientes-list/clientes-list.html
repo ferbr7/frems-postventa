@@ -77,14 +77,14 @@
 
                     <!-- Última compra -->
                     <td class="px-6 py-4 text-slate-700">
-                        {{ c.ultimacompra ? (c.ultimacompra | date:'dd/MM/yyyy') : '—' }}
+                        {{ c.ultimacompra ? (c.ultimacompra | date:'dd/MM/yyyy':'UTC') : '—' }}
                     </td>
 
                     <!-- Compras -->
                     <td class="px-6 py-4">
                         <span
                             class="inline-flex items-center rounded-full border border-emerald-200 text-emerald-700 px-2.5 py-0.5 text-sm">
-                            {{ (0) }}
+                            {{ c.compras }}
                         </span>
                     </td>
 

@@ -15,7 +15,9 @@ import { ClientesFormComponent } from './clientes/clientes-form/clientes-form';
 import { ProductosListComponent } from './productos/productos-list/productos-list';
 import { ProductosFormComponent } from './productos/productos-form/productos-form';
 import { EntradaInventarioFormComponent } from './inventario/entrada-form/entrada-form';
-
+import { VentasFormComponent } from './ventas/ventas-form/ventas-form';
+import { VentasListComponent } from './ventas/ventas-list/ventas-list';
+import { VentasPrintComponent } from './ventas/ventas-print/ventas-print';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -38,6 +40,11 @@ export const routes: Routes = [
 
   // Ventas
   { path: 'venta/nueva', component: VentaNuevaComponent },
+  { path: 'ventas', component: VentasListComponent},
+  { path: 'ventas/nueva', component: VentasFormComponent},
+  { path: 'ventas/:id/imprimir', component: VentasPrintComponent},
+  { path: 'ventas/:id/ver', component: VentasFormComponent},
+
 
   // Productos
   { path: 'producto/nuevo', component: ProductoNuevoComponent },

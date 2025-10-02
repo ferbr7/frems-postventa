@@ -15,12 +15,13 @@ export interface ClienteRow {
   direccion: string | null;
   fechaingreso: string;     // ISO
   ultimacompra: string | null;
+  compras: number;
 }
 
 interface ListResp {
   ok: boolean;
   page: number;
-  size: number;             // el backend devuelve "size"
+  size: number;           
   total: number;
   items: ClienteRow[];
 }
