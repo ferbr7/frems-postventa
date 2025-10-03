@@ -36,15 +36,17 @@ model usuarios {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model clientes {
-  idcliente    Int       @id @default(autoincrement())
-  nombre       String    @db.VarChar(100)
-  apellido     String    @db.VarChar(100)
-  email        String?   @db.VarChar(150)
-  telefono     String?   @unique(map: "clientes_telefono_unique") @db.VarChar(25)
-  direccion    String?
-  fechaingreso DateTime? @default(dbgenerated("CURRENT_DATE")) @db.Date
-  ultimacompra DateTime? @db.Date
-  ventas       ventas[]
+  idcliente       Int               @id @default(autoincrement())
+  nombre          String            @db.VarChar(100)
+  apellido        String            @db.VarChar(100)
+  email           String?           @db.VarChar(150)
+  telefono        String?           @unique(map: "clientes_telefono_unique") @db.VarChar(25)
+  direccion       String?
+  fechaingreso    DateTime?         @default(dbgenerated("CURRENT_DATE")) @db.Date
+  ultimacompra    DateTime?         @db.Date
+  rec_metrics     rec_metrics[]
+  recomendaciones recomendaciones[]
+  ventas          ventas[]
 
   @@index([apellido, nombre], map: "idx_clientes_apellido_nombre")
   @@index([fechaingreso], map: "idx_clientes_fechaingreso")
@@ -55,23 +57,26 @@ model clientes {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model productos {
-  idproducto           Int                   @id @default(autoincrement())
-  sku                  String                @db.VarChar(50)
-  nombre               String                @db.VarChar(120)
-  descripcion          String?
-  categoria            String?               @db.VarChar(80)
-  medida               String?               @db.VarChar(20)
-  precioventa          Decimal               @db.Decimal(12, 2)
-  stock                Int                   @default(0)
-  activo               Boolean               @default(true)
-  duracionestimadodias Int?
-  fechaalta            DateTime              @default(dbgenerated("CURRENT_DATE")) @db.Date
-  fechamod             DateTime              @default(now()) @db.Timestamptz(6)
-  inventario_entradas  inventario_entradas[]
-  ventas_detalle       ventas_detalle[]
+  idproducto              Int                       @id @default(autoincrement())
+  sku                     String                    @db.VarChar(50)
+  nombre                  String                    @db.VarChar(120)
+  descripcion             String?
+  categoria               String?                   @db.VarChar(80)
+  medida                  String?                   @db.VarChar(20)
+  precioventa             Decimal                   @db.Decimal(12, 2)
+  stock                   Int                       @default(0)
+  activo                  Boolean                   @default(true)
+  duracionestimadodias    Int?
+  fechaalta               DateTime                  @default(dbgenerated("CURRENT_DATE")) @db.Date
+  fechamod                DateTime                  @default(now()) @db.Timestamptz(6)
+  inventario_entradas     inventario_entradas[]
+  rec_metrics             rec_metrics[]
+  recomendaciones_detalle recomendaciones_detalle[]
+  ventas_detalle          ventas_detalle[]
 
   @@index([categoria], map: "idx_productos_categoria")
   @@index([nombre(ops: raw("gin_trgm_ops"))], map: "idx_productos_nombre_trgm", type: Gin)
+  @@index([duracionestimadodias], map: "ix_productos_duracion")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -110,6 +115,7 @@ model ventas {
   @@index([fecha], map: "idx_ventas_fecha")
   @@index([idcliente], map: "idx_ventas_idcliente")
   @@index([idusuario], map: "idx_ventas_idusuario")
+  @@index([idcliente, estado, fecha], map: "ix_ventas_cliente_estado_fecha")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -126,4 +132,53 @@ model ventas_detalle {
 
   @@index([idproducto], map: "idx_vdet_idproducto")
   @@index([idventa], map: "idx_vdet_idventa")
+  @@index([idventa], map: "ix_ventas_detalle_idventa")
+  @@index([idproducto], map: "ix_ventas_detalle_producto")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model recomendaciones {
+  idrecomendacion         Int                       @id @default(autoincrement())
+  idcliente               Int
+  fechageneracion         DateTime                  @default(now()) @db.Timestamptz(6)
+  model_ia                String                    @default("gpt-4o-mini") @db.VarChar(80)
+  justificacion           String?
+  estado                  String                    @default("pendiente") @db.VarChar(20)
+  next_action_at          DateTime?                 @db.Date
+  score_total             Decimal?                  @default(0) @db.Decimal(5, 2)
+  converted_venta_id      Int?
+  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  clientes                clientes                  @relation(fields: [idcliente], references: [idcliente], onDelete: Cascade, onUpdate: NoAction)
+  recomendaciones_detalle recomendaciones_detalle[]
+
+  @@index([idcliente, estado], map: "idx_recs_cliente_estado")
+  @@index([fechageneracion(sort: Desc)], map: "idx_recs_fecha")
+  @@index([next_action_at], map: "idx_recs_next_action")
+}
+
+model recomendaciones_detalle {
+  idrecdetalle    Int             @id @default(autoincrement())
+  idrecomendacion Int
+  idproducto      Int
+  prioridad       Int             @db.SmallInt
+  score           Decimal         @default(0) @db.Decimal(5, 2)
+  razon           String?
+  productos       productos       @relation(fields: [idproducto], references: [idproducto], onDelete: NoAction, onUpdate: NoAction)
+  recomendaciones recomendaciones @relation(fields: [idrecomendacion], references: [idrecomendacion], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([idrecomendacion, idproducto])
+}
+
+model rec_metrics {
+  idcliente   Int
+  idproducto  Int
+  last_date   DateTime  @db.Date
+  median_days Int
+  buy_count   Int
+  clientes    clientes  @relation(fields: [idcliente], references: [idcliente], onDelete: Cascade, onUpdate: NoAction)
+  productos   productos @relation(fields: [idproducto], references: [idproducto], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([idcliente, idproducto])
+  @@index([idcliente, last_date, median_days], map: "ix_rec_metrics_due")
 }
