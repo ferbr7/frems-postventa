@@ -9,16 +9,117 @@ import { enviarAlertaVendedores } from '../services/mailer';
 
 export const recsRouter = Router();
 
+recsRouter.get('/', async (req, res) => {
+  try {
+    const page   = Math.max(1, Number(req.query.page ?? 1));
+    const size   = Math.min(50, Math.max(1, Number(req.query.size ?? 10)));
+    const estado = String(req.query.estado ?? 'all').toLowerCase(); // pendiente|enviada|descartada|all
+    const due    = String(req.query.due ?? 'all').toLowerCase();    // overdue|today|upcoming|all
+    const search = String(req.query.search ?? '').trim();
+
+    const where: any = {};
+
+    // estado
+    if (['pendiente','enviada','descartada'].includes(estado)) {
+      where.estado = estado;
+    }
+
+    // --- cálculo de día UTC sin helper ---
+    const now = new Date();
+    const todayStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())); // 00:00Z
+    const tomorrowStart = new Date(todayStart.getTime() + 86400000);                          // +1 día
+
+    // due (solo para pendientes)
+    if ((estado === 'pendiente' || estado === 'all') && ['overdue','today','upcoming'].includes(due)) {
+      where.estado = 'pendiente';
+      if (due === 'overdue')   where.next_action_at = { lt: todayStart };
+      if (due === 'today')     where.next_action_at = { gte: todayStart, lt: tomorrowStart };
+      if (due === 'upcoming')  where.next_action_at = { gte: tomorrowStart };
+    }
+
+    // search por cliente
+    if (search) {
+      where.clientes = {
+        OR: [
+          { nombre:   { contains: search, mode: 'insensitive' } },
+          { apellido: { contains: search, mode: 'insensitive' } },
+          { email:    { contains: search, mode: 'insensitive' } },
+          { telefono: { contains: search } },
+        ],
+      };
+    }
+
+    const total = await prisma.recomendaciones.count({ where });
+
+    const rows = await prisma.recomendaciones.findMany({
+      where,
+      skip: (page - 1) * size,
+      take: size,
+      orderBy: [
+        { estado: 'asc' },        // pendientes primero
+        { next_action_at: 'asc' },
+        { idrecomendacion: 'desc' },
+      ],
+      select: {
+        idrecomendacion: true,
+        fechageneracion: true,
+        next_action_at: true,
+        estado: true,
+        justificacion: true,
+        clientes: { select: { idcliente:true, nombre:true, apellido:true, telefono:true, email:true } },
+        recomendaciones_detalle: {
+          orderBy: { prioridad: 'asc' },
+          take: 3,
+          select: { prioridad:true, productos:{ select:{ idproducto:true, nombre:true, sku:true, medida:true } } },
+        },
+      },
+    });
+
+    const items = rows.map(r => ({
+      id: r.idrecomendacion,
+      fecha: r.fechageneracion,
+      next_action_at: r.next_action_at,
+      estado: r.estado,
+      cliente: {
+        id: r.clientes?.idcliente ?? null,
+        nombre: `${r.clientes?.nombre ?? ''} ${r.clientes?.apellido ?? ''}`.trim(),
+        telefono: r.clientes?.telefono ?? null,
+        email: r.clientes?.email ?? null,
+      },
+      preview: (r.justificacion ?? '').slice(0, 160),
+      opciones: r.recomendaciones_detalle.map(d => ({
+        nombre: d.productos?.nombre ?? '—',
+        sku: d.productos?.sku ?? null,
+        medida: d.productos?.medida ?? null,
+      })),
+    }));
+
+    res.json({ ok:true, page, size, total, items });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok:false, message:'Error listando recomendaciones' });
+  }
+});
+
 /** GET /api/recs/candidates?idcliente= */
 recsRouter.get('/candidates', async (req, res) => {
   try {
     const idc = req.query.idcliente ? Number(req.query.idcliente) : undefined;
-    const rows: Array<{ idcliente: number; reason: string }> = await prisma.$queryRawUnsafe(
-      `SELECT idcliente, reason FROM rec_candidates_daily ${idc ? 'WHERE idcliente = $1' : ''}`,
-      ...(idc ? [idc] : []),
-    );
+    let rows: Array<{ idcliente: number; reason: string }> = [];
+    if (idc && Number.isFinite(idc)) {
+      rows = await prisma.$queryRaw<{ idcliente: number; reason: string }[]>`
+        SELECT idcliente, reason FROM rec_candidates_daily WHERE idcliente = ${idc}
+      `;
+    } else {
+      rows = await prisma.$queryRaw<{ idcliente: number; reason: string }[]>`
+        SELECT idcliente, reason FROM rec_candidates_daily
+      `;
+    }
     res.json({ ok: true, items: rows });
-  } catch (e) { console.error(e); res.status(500).json({ ok:false, message:'Error leyendo candidatos' }); }
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok:false, message:'Error leyendo candidatos' });
+  }
 });
 
 /** POST /api/recs/refresh */
@@ -81,7 +182,10 @@ recsRouter.get('/:id', async (req, res) => {
     });
     if (!rec) return res.status(404).json({ ok:false, message:'No encontrada' });
     res.json({ ok:true, rec });
-  } catch (e) { console.error(e); res.status(500).json({ ok:false, message:'Error obteniendo recomendación' }); }
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok:false, message:'Error obteniendo recomendación' });
+  }
 });
 
 /** POST /api/recs/:id/defer { days } */
@@ -98,7 +202,10 @@ recsRouter.post('/:id/defer', async (req, res) => {
       select: { idrecomendacion:true, next_action_at:true },
     });
     res.json({ ok:true, id:upd.idrecomendacion, next_action_at: upd.next_action_at });
-  } catch (e) { console.error(e); res.status(500).json({ ok:false, message:'Error posponiendo' }); }
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok:false, message:'Error posponiendo' });
+  }
 });
 
 /** POST /api/recs/:id/discard */
@@ -106,9 +213,12 @@ recsRouter.post('/:id/discard', async (req, res) => {
   try {
     const id = Number(req.params.id);
     const upd = await prisma.recomendaciones.update({
-      where: { idrecomendacion: id }, data: { estado: 'descartada' },
+      where: { idrecomendacion: id }, data: { estado: 'descartada', next_action_at: null },
       select: { idrecomendacion:true, estado:true },
     });
     res.json({ ok:true, id:upd.idrecomendacion, estado:upd.estado });
-  } catch (e) { console.error(e); res.status(500).json({ ok:false, message:'Error descartando' }); }
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok:false, message:'Error descartando' });
+  }
 });

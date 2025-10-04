@@ -2,8 +2,6 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './home/home';
 import { LoginComponent } from './auth/login/login';
 import { ForgotPasswordComponent } from './auth/forgot-password/forgot-password';
-import { ClientesComponent } from './clientes/clientes';
-import { ClienteNuevoComponent } from './cliente-nuevo/cliente-nuevo';
 import { VentaNuevaComponent } from './ventas/venta-nueva/venta-nueva';
 import { ProductoNuevoComponent } from './productos/producto-nuevo/producto-nuevo';
 import { ReportesComponent } from './reportes/reportes';
@@ -18,6 +16,8 @@ import { EntradaInventarioFormComponent } from './inventario/entrada-form/entrad
 import { VentasFormComponent } from './ventas/ventas-form/ventas-form';
 import { VentasListComponent } from './ventas/ventas-list/ventas-list';
 import { VentasPrintComponent } from './ventas/ventas-print/ventas-print';
+import { RecsListComponent } from './recomendaciones/recs-list/recs-list';
+import { RecsDetailComponent } from './recomendaciones/recs-detail/recs-detail';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -40,23 +40,26 @@ export const routes: Routes = [
 
   // Ventas
   { path: 'venta/nueva', component: VentaNuevaComponent },
-  { path: 'ventas', component: VentasListComponent},
-  { path: 'ventas/nueva', component: VentasFormComponent},
-  { path: 'ventas/:id/imprimir', component: VentasPrintComponent},
-  { path: 'ventas/:id/ver', component: VentasFormComponent},
+  { path: 'ventas', component: VentasListComponent },
+  { path: 'ventas/nueva', component: VentasFormComponent },
+  { path: 'ventas/:id/imprimir', component: VentasPrintComponent },
+  { path: 'ventas/:id/ver', component: VentasFormComponent },
 
 
   // Productos
   { path: 'producto/nuevo', component: ProductoNuevoComponent },
-  { path: 'inventario/entrada/nuevo', component: EntradaInventarioFormComponent},
+  { path: 'inventario/entrada/nuevo', component: EntradaInventarioFormComponent },
 
   // Reportes
   { path: 'reportes', component: ReportesComponent },
-  {path: 'productos', component: ProductosListComponent},
-  {path:'productos/nuevo', component: ProductosFormComponent},
-  {path:'productos/:id/editar', component: ProductosFormComponent},
-  {path:'productos/:id/ver', component: ProductosFormComponent},
+  { path: 'productos', component: ProductosListComponent },
+  { path: 'productos/nuevo', component: ProductosFormComponent },
+  { path: 'productos/:id/editar', component: ProductosFormComponent },
+  { path: 'productos/:id/ver', component: ProductosFormComponent },
 
+  //Recs
+  { path: 'recomendaciones', component: RecsListComponent},
+  { path: 'recomendaciones/:id', component: RecsDetailComponent},
 
   // IA (lazy)
   {

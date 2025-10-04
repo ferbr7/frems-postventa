@@ -8,6 +8,7 @@ import { productosRouter } from './routes/productos.routes';
 import { inventarioRouter } from './routes/inventario.routes';
 import { ventasRouter } from './routes/ventas.routes';
 import { recsRouter} from './routes/recs.routes';
+import { startRecsScheduler } from './recs.scheduler';
 
 const app = express();
 
@@ -48,6 +49,8 @@ app.use('/api/recs', recsRouter);
 app.use((_req, res) => {
   res.status(404).json({ ok: false, message: 'Ruta no encontrada' });
 });
+
+startRecsScheduler();
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

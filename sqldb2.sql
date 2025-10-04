@@ -102,6 +102,7 @@ EXECUTE FUNCTION trg_rec_metrics_after_sale();
 
 DROP MATERIALIZED VIEW IF EXISTS rec_candidates_daily;
 
+
 CREATE MATERIALIZED VIEW rec_candidates_daily AS
 WITH lastp AS (
   -- Última compra por cliente-producto
@@ -124,35 +125,74 @@ agg AS (
   JOIN productos p ON p.idproducto = lp.idproducto
   LEFT JOIN rec_metrics m
     ON m.idcliente = lp.idcliente AND m.idproducto = lp.idproducto
+),
+last_by_client AS (
+  SELECT v.idcliente, MAX(v.fecha)::date AS last_fecha
+  FROM ventas v
+  WHERE v.estado = 'registrada'
+  GROUP BY v.idcliente
+),
+
+-- A) Patrón/ciclo (anticipa 3 días)
+cycle AS (
+  SELECT DISTINCT a.idcliente, 1 AS prio, 'cycle'::text AS reason
+  FROM agg a
+  WHERE a.cycle_days IS NOT NULL
+    AND (a.last_date + (a.cycle_days - 3)) <= CURRENT_DATE
+    AND a.buy_count >= 1
+),
+
+-- B) Dormidos: sí tienen compras, pero la última fue hace > 90 días
+dormant AS (
+  SELECT l.idcliente, 2 AS prio, 'dormant'::text AS reason
+  FROM last_by_client l
+  WHERE l.last_fecha <= CURRENT_DATE - INTERVAL '90 days'
+),
+
+-- C) 0 compras y antigüedad > 90 días (cliente “viejo” sin compras)
+no_purchases_old AS (
+  SELECT c.idcliente, 3 AS prio, 'no_purchases_old'::text AS reason
+  FROM clientes c
+  WHERE c.fechaingreso IS NOT NULL
+    AND c.fechaingreso <= CURRENT_DATE - INTERVAL '90 days'
+    AND NOT EXISTS (
+      SELECT 1 FROM ventas v
+      WHERE v.idcliente = c.idcliente
+        AND v.estado = 'registrada'
+    )
+),
+
+-- D) 0 compras “nuevo” (antigüedad <= 90 días)
+no_purchases AS (
+  SELECT c.idcliente, 4 AS prio, 'no_purchases'::text AS reason
+  FROM clientes c
+  WHERE NOT EXISTS (
+    SELECT 1 FROM ventas v
+    WHERE v.idcliente = c.idcliente
+      AND v.estado = 'registrada'
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM no_purchases_old o WHERE o.idcliente = c.idcliente
+  )
 )
--- A) Patrón o duración -> “debidos” (anticipa 3 días)
-SELECT DISTINCT a.idcliente, 'cycle'::text AS reason
-FROM agg a
-WHERE a.cycle_days IS NOT NULL
-  AND (a.last_date + (a.cycle_days - 3)) <= CURRENT_DATE
-  AND a.buy_count >= 1
 
-UNION ALL
--- B) Inactivos (> 90 días desde última compra o sin última)
-SELECT v.idcliente, 'dormant'
+-- Resultado final: 1 fila por cliente (razón con mayor prioridad)
+SELECT DISTINCT ON (idcliente) idcliente, reason
 FROM (
-  SELECT idcliente, MAX(fecha)::date AS last_fecha
-  FROM ventas
-  WHERE estado = 'registrada'
-  GROUP BY idcliente
-) v
-WHERE v.last_fecha IS NULL
-   OR v.last_fecha <= CURRENT_DATE - INTERVAL '90 days'
+  SELECT * FROM cycle
+  UNION ALL
+  SELECT * FROM dormant
+  UNION ALL
+  SELECT * FROM no_purchases_old
+  UNION ALL
+  SELECT * FROM no_purchases
+) t
+ORDER BY idcliente, prio;
 
-UNION ALL
--- C) Sin compras (jamás compraron)
-SELECT c.idcliente, 'no_purchases'
-FROM clientes c
-WHERE NOT EXISTS (
-  SELECT 1 FROM ventas v
-   WHERE v.idcliente = c.idcliente
-     AND v.estado = 'registrada'
-);
+
+
+
+
 
 -- Índice para lecturas rápidas desde backend
 CREATE INDEX IF NOT EXISTS ix_rec_candidates_daily
@@ -206,8 +246,49 @@ ORDER BY compras DESC;
 
 REFRESH MATERIALIZED VIEW rec_candidates_daily;
 
-
+select * from clientes;
 SELECT *
 FROM rec_candidates_daily
-WHERE idcliente = 3
 ;
+delete from clientes where idcliente = 2;
+
+select * from recomendaciones;
+delete from recomendaciones;
+select * from recomendaciones_detalle;
+
+SELECT estado, COUNT(*) FROM recomendaciones GROUP BY estado ORDER BY estado;
+
+
+SELECT conname, pg_get_constraintdef(c.oid) AS def
+FROM pg_constraint c
+JOIN pg_class t ON c.conrelid = t.oid
+WHERE t.relname = 'recomendaciones';
+
+
+
+CREATE TABLE IF NOT EXISTS recomendaciones (
+  idrecomendacion     SERIAL PRIMARY KEY,
+  idcliente           INTEGER NOT NULL REFERENCES clientes(idcliente) ON DELETE CASCADE,
+  fechageneracion     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  model_ia            VARCHAR(80) NOT NULL DEFAULT 'gpt-4o-mini',   -- o el que uses
+  justificacion       TEXT,                                          -- explicación general
+  estado              VARCHAR(20) NOT NULL DEFAULT 'pendiente'
+                      CHECK (estado IN ('pendiente','enviada','descartada','vencida')),
+  next_action_at      DATE,                                          -- recontacto (posponer)
+  score_total         NUMERIC(5,2) DEFAULT 0,                        -- score agregado
+  converted_venta_id  INTEGER,                                       -- si se convirtió en venta luego
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+
+
+BEGIN;
+
+ALTER TABLE recomendaciones DROP CONSTRAINT IF EXISTS recomendaciones_estado_check;
+
+ALTER TABLE recomendaciones
+ADD CONSTRAINT recomendaciones_estado_check
+CHECK (estado IN ('pendiente','enviada','descartada','vencida'));
+
+COMMIT;
