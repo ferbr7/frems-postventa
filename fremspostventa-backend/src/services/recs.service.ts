@@ -230,9 +230,9 @@ export async function mensajeSugerido(
 ) {
   const nombre = cliente.nombre ?? '¿cómo estás?';
   const bullets = opciones.map(o =>
-    `• ${o.nombre}${o.medida ? ' ' + o.medida : ''}${o.sku ? ` (SKU: ${o.sku})` : ''}${o.razon ? ` — ${o.razon}` : ''}`
+    `• ${o.nombre}${o.medida ? ' ' + o.medida : ''}${o.razon ? ` — ${o.razon}` : ''}`
   ).join('\n');
-  const tono = ['cercano y natural (vos)', 'amable y profesional', 'dinámico/entusiasta'][Math.floor(Math.random()*3)];
+  const tono = ['cercano y natural (tú)', 'amable y profesional', 'dinámico/entusiasta'][Math.floor(Math.random()*3)];
 
   // Sin OpenAI => copies específicos por escenario
   if (!openai) {
@@ -258,17 +258,18 @@ export async function mensajeSugerido(
   ].filter(Boolean).join(' | ');
 
   const prompt = `
-Escribe en español un único mensaje breve (4–6 líneas), tono ${tono}, usando "tu".
+Escribe en español un único mensaje breve (4–6 líneas), tono ${tono}, usando "tú".
 ${contexto}
 
 Instrucciones:
 - Personaliza la primera línea acorde al escenario.
-- Presenta las opciones como bullets, sin inventar datos. Incluye nombre, medida y SKU EXACTOS. Si hay "razon", añadí una frase corta.
+- Presenta las opciones como bullets, sin inventar datos. Incluye nombre y medida EXACTOS. Si hay "razon", añadí una frase corta.
 - Cierra con un llamado a la acción (separar / enviar fotos y precio).
 - Varía el wording en cada generación.
+- Prepara ese mensaje para abordar al cliente en un chat de whatsApp.
 
 Opciones:
-${opciones.map((o,i)=>`- Opción ${i+1}: ${o.nombre}${o.medida?' '+o.medida:''}${o.sku?' (SKU: '+o.sku+')':''}${o.razon? ' | razón: '+o.razon:''}`).join('\n')}
+${opciones.map((o,i)=>`- Opción ${i+1}: ${o.nombre}${o.medida?' '+o.medida:''}${o.razon? ' | razón: '+o.razon:''}`).join('\n')}
 
 Nombre del cliente: ${nombre}
 `;

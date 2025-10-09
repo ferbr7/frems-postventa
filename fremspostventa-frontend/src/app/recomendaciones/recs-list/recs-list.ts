@@ -50,7 +50,7 @@ export class RecsListComponent implements OnInit {
   async fetch() {
     this.loading.set(true);
     try {
-      const resp = await firstValueFrom(this.api.list({ page: 1, size: 100, estado: 'all' }));
+      const resp = await firstValueFrom(this.api.list({ page: 1, size: 100, estado: 'pendiente' }));
       const items = Array.isArray(resp?.items) ? resp.items : [];
       this.recs.set(items.map(it => this.mapItem(it)));
     } catch (e) {
@@ -64,7 +64,7 @@ export class RecsListComponent implements OnInit {
   trackById = (_: number, r: ViewRec) => r.id;
 
   // Acciones
-  async snooze(id: number, tag: '1d'|'3d'|'7d') {
+  async snooze(id: number, tag: '1d' | '3d' | '7d') {
     const days = tag === '1d' ? 1 : tag === '3d' ? 3 : 7;
     try {
       await firstValueFrom(this.api.defer(id, days));
@@ -76,6 +76,7 @@ export class RecsListComponent implements OnInit {
     if (!confirm(`Descartar recomendación #${id}?`)) return;
     try {
       await firstValueFrom(this.api.discard(id));
+      this.recs.update(list => list.filter(x => x.id !== id));
       await this.fetch();
     } catch { alert('No se pudo descartar.'); }
   }
@@ -86,18 +87,48 @@ export class RecsListComponent implements OnInit {
     const number = digits.startsWith('502') ? digits : `502${digits}`;
     const labels = ['Opción 1', 'Opción 2', 'Opción 3'];
     const chips = r.opciones.map((o, i) => `${labels[i] || 'Opción'}: ${o.nombre}`).join(' · ');
-    const text  = `¡Hola ${r.clienteNombre}!%0A${r.mensaje}%0A%0ASugerencias: ${chips}`;
+    const text = `¡Hola ${r.clienteNombre}!%0A${r.mensaje}%0A%0ASugerencias: ${chips}`;
     return `https://wa.me/${number}?text=${text}`;
   }
 
   labelProx(iso: string | null): string {
     if (!iso) return '—';
     const now = new Date();
-    const dt  = new Date(iso);
-    const d   = Math.round((dt.getTime() - now.getTime()) / 86400000);
+    const dt = new Date(iso);
+    const d = Math.round((dt.getTime() - now.getTime()) / 86400000);
     if (d === 0) return 'hoy';
     if (d === 1) return 'en 1 día';
-    if (d < 0)   return `en ${Math.abs(d)} día${Math.abs(d) === 1 ? '' : 's'}`;
+    if (d < 0) return `en ${Math.abs(d)} día${Math.abs(d) === 1 ? '' : 's'}`;
     return `en ${d} días`;
+  }
+
+  async sendWhatsApp(r: ViewRec) {
+    try {
+
+      const { rec } = await firstValueFrom(this.api.get(r.id));
+
+
+      const rawPhone = (rec?.clientes?.telefono ?? r.telefono ?? '').toString();
+      const digits = rawPhone.replace(/\D+/g, '');
+      if (!digits) { alert('El cliente no tiene teléfono válido.'); return; }
+      const number = digits.startsWith('502') ? digits : `502${digits}`;
+
+
+      const msg = (rec?.justificacion ?? r.mensaje ?? '').toString();
+      const url = `https://wa.me/${number}?text=${encodeURIComponent(msg)}`;
+
+      try {
+        await firstValueFrom(this.api.markSent(r.id));
+        this.recs.update(list => list.filter(x => x.id !== r.id));
+      } catch (e) {
+        console.warn('[markSent] falló pero no bloqueamos el envío', e);
+      }
+
+      window.open(url, '_blank');
+
+    } catch (e) {
+      console.error('[WA] error', e);
+      alert('No se pudo armar el mensaje de WhatsApp.');
+    }
   }
 }

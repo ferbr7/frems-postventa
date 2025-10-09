@@ -5,6 +5,8 @@ import { Router, RouterModule } from '@angular/router';
 import { BehaviorSubject, Subscription, combineLatest } from 'rxjs';
 import { debounceTime, distinctUntilChanged, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { ClientesService } from '../../core/clientes.service';
+import { firstValueFrom } from 'rxjs';
+import { RecsService } from '../../core/recs.service';
 
 export interface ClienteRow {
   idcliente: number;
@@ -21,7 +23,7 @@ export interface ClienteRow {
 interface ListResp {
   ok: boolean;
   page: number;
-  size: number;           
+  size: number;
   total: number;
   items: ClienteRow[];
 }
@@ -35,6 +37,9 @@ interface ListResp {
 export class ClientesListComponent implements OnInit, OnDestroy {
   private api = inject(ClientesService);
   private router = inject(Router);
+  private recs = inject(RecsService);
+
+  generatingId: number | null = null;
 
   // UI
   loading = false;
@@ -47,8 +52,8 @@ export class ClientesListComponent implements OnInit, OnDestroy {
 
   // Subjects
   private search$ = new BehaviorSubject<string>('');
-  private page$   = new BehaviorSubject<number>(1);
-  private limit$  = new BehaviorSubject<number>(5);
+  private page$ = new BehaviorSubject<number>(1);
+  private limit$ = new BehaviorSubject<number>(5);
 
   private auxSubs: Subscription[] = [];
 
@@ -118,5 +123,28 @@ export class ClientesListComponent implements OnInit, OnDestroy {
   nuevo(): void { this.router.navigate(['/clientes/nuevo']); }
   editar(c: ClienteRow): void { this.router.navigate(['/clientes', c.idcliente, 'editar']); }
   ver(c: ClienteRow): void { this.router.navigate(['/clientes', c.idcliente, 'ver']); }
-  ia(c:ClienteRow): void {this.router.navigate(['/ia/recomendaciones'])}
+
+  async ia(c: ClienteRow): Promise<void> {
+    if (!c?.idcliente) return;
+    this.generatingId = c.idcliente;
+    try {
+      // Puedes ajustar top_n o alert_vendedores si querés
+      const { rec } = await firstValueFrom(
+        this.recs.generate({ idcliente: c.idcliente, top_n: 3 /*, alert_vendedores: true*/ })
+      );
+
+      const id = Number(rec?.idrecomendacion);
+      if (Number.isFinite(id) && id > 0) {
+        // Ir al detalle de la recomendación recién creada
+        this.router.navigate(['/recomendaciones', id]);
+      } else {
+        alert('Se generó la recomendación pero no se obtuvo el ID.');
+      }
+    } catch (e: any) {
+      console.error('[IA generate] error', e);
+      alert(e?.error?.message || 'No se pudo generar la recomendación.');
+    } finally {
+      this.generatingId = null;
+    }
+  }
 }

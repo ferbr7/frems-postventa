@@ -10,7 +10,7 @@
                 class="rounded-xl bg-white text-emerald-700 px-4 py-2 hover:bg-emerald-50 shadow-sm">
                 + Nuevo cliente
             </a>
-            <a routerLink="/"
+            <a routerLink="/home"
                 class="rounded-xl border border-emerald-200/60 bg-emerald-600/30 text-white px-4 py-2 hover:bg-white/10">
                 Volver
             </a>
@@ -95,7 +95,7 @@
                                 class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">
                                 Ver
                             </button>
-                            <button (click)="ia(c)"
+                            <button (click)="ia(c)" [disabled]="generatingId === c.idcliente"
                                 class="rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 px-3 py-1.5 hover:bg-emerald-100">
                                 IA
                             </button>
@@ -121,7 +121,20 @@
             <span class="font-medium">{{ total }}</span>
             clientes
         </div>
-
+        <!-- Banner flotante mientras se genera recomendacion -->
+        <ng-container *ngIf="generatingId as gid">
+            <div class="fixed inset-0 bg-black/10 backdrop-blur-[1px] z-40"></div>
+            <!-- Toast flotante -->
+            <div class="fixed top-4 right-4 z-50 rounded-lg bg-white border border-slate-200 shadow px-4 py-2 text-slate-700 flex items-center gap-2"
+                role="status" aria-live="polite">
+                <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" stroke-width="4">
+                    </circle>
+                    <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="4"></path>
+                </svg>
+                <span>Generando recomendación…</span>
+            </div>
+        </ng-container>
         <div class="flex items-center gap-3">
             <label class="flex items-center gap-2">
                 Mostrar

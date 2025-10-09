@@ -1,0 +1,92 @@
+<style>
+  @page { margin: 14mm; }
+  @media print {
+    .no-print { display: none !important; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .card { box-shadow: none !important; border: 0 !important; }
+  }
+</style>
+
+<div class="min-h-screen bg-neutral-50 p-6" *ngIf="!loading; else cargando">
+  <div *ngIf="err" class="max-w-3xl mx-auto">
+    <div class="no-print mb-4">
+      <button (click)="volver()" class="rounded-lg border px-3 py-1.5">Volver</button>
+    </div>
+    <div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-700 px-4 py-3">
+      {{ err }}
+    </div>
+  </div>
+
+  <div *ngIf="!err" class="max-w-3xl mx-auto bg-white card rounded-2xl border border-slate-200">
+    <!-- Encabezado / acciones pantalla -->
+    <div class="no-print flex justify-between items-center p-4 border-b border-slate-200">
+      <div class="text-slate-700 font-medium">Vista de impresión — Recomendación #{{ rec?.idrecomendacion }}</div>
+      <div class="flex gap-2">
+        <button (click)="reimprimir()" class="rounded-lg border px-3 py-1.5">Imprimir</button>
+        <button (click)="volver()" class="rounded-lg border px-3 py-1.5">Volver</button>
+      </div>
+    </div>
+
+    <!-- Contenido -->
+    <div class="p-6">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-2xl font-semibold text-slate-900">Detalle de recomendación</div>
+          <div class="text-slate-500">ID #{{ rec?.idrecomendacion }}</div>
+        </div>
+        <div class="text-right">
+          <div class="text-slate-900 font-medium">Fecha</div>
+          <div class="text-slate-700">{{ fecha }}</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-6 mt-6">
+        <div>
+          <div class="text-slate-500 text-sm">Cliente</div>
+          <div class="text-slate-900 font-medium">
+            {{ (cliente?.nombre || '') + (cliente?.apellido ? ' ' + cliente?.apellido : '') || '—' }}
+          </div>
+          <div class="text-slate-700" *ngIf="cliente?.telefono">Tel: {{ cliente?.telefono }}</div>
+          <div class="text-slate-700" *ngIf="cliente?.email">Email: {{ cliente?.email }}</div>
+        </div>
+      </div>
+
+      <!-- Mensaje sugerido -->
+      <div class="mt-6">
+        <div class="text-slate-500 text-sm">Mensaje sugerido</div>
+        <pre class="whitespace-pre-wrap text-slate-800 bg-slate-50 border border-slate-200 rounded-xl p-3">
+{{ mensaje }}</pre>
+      </div>
+
+      <!-- Opciones -->
+      <div class="mt-6" *ngIf="opciones?.length">
+        <div class="text-slate-500 text-sm">Opciones recomendadas</div>
+        <div class="mt-2 overflow-hidden rounded-xl border border-slate-200">
+          <table class="min-w-full">
+            <thead class="bg-slate-50">
+              <tr class="text-slate-600 text-sm">
+                <th class="px-4 py-2 text-left">Producto</th>
+                <th class="px-4 py-2 text-left">SKU</th>
+                <th class="px-4 py-2 text-right">Precio</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of opciones" class="border-t border-slate-100">
+                <td class="px-4 py-2">{{ p?.nombre || '—' }}</td>
+                <td class="px-4 py-2 text-slate-600">{{ p?.sku || '—' }}</td>
+                <td class="px-4 py-2 text-right">
+                  {{ p?.precioventa != null ? (p.precioventa | currency:'Q ':'symbol':'1.2-2') : '—' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<ng-template #cargando>
+  <div class="min-h-screen flex items-center justify-center text-slate-500">Cargando…</div>
+</ng-template>

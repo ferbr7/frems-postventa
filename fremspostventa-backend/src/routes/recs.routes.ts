@@ -20,7 +20,7 @@ recsRouter.get('/', async (req, res) => {
     const where: any = {};
 
     // estado
-    if (['pendiente','enviada','descartada'].includes(estado)) {
+    if (['pendiente','enviada','descartada', 'vencida'].includes(estado)) {
       where.estado = estado;
     }
 
@@ -220,5 +220,24 @@ recsRouter.post('/:id/discard', async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok:false, message:'Error descartando' });
+  }
+});
+
+/** POST /api/recs/:id/sent */
+recsRouter.post('/:id/sent', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const upd = await prisma.recomendaciones.update({
+      where: { idrecomendacion: id },
+      data: {
+        estado: 'enviada',
+        next_action_at: null, 
+      },
+      select: { idrecomendacion: true, estado: true, next_action_at: true },
+    });
+    res.json({ ok: true, id: upd.idrecomendacion, estado: upd.estado, next_action_at: upd.next_action_at });
+  } catch (err) {
+    console.error('[POST /api/recs/:id/sent] error', err);
+    res.status(500).json({ ok: false, error: 'mark_sent_failed' });
   }
 });

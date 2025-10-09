@@ -62,12 +62,12 @@
         <!-- Acciones -->
         <aside class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <div class="space-y-4">
-            <a [href]="waLink()" target="_blank" rel="noopener"
+            <button (click)="sendWhatsApp()"
                class="block w-full text-center rounded-xl bg-emerald-600 px-4 py-2.5 text-white hover:bg-emerald-700">
               Abrir WhatsApp
-            </a>
+            </button>
 
-            <a [routerLink]="['/ia/print', r.id]"
+            <a [routerLink]="['/recomendaciones', r.id, 'imprimir']"
                class="block w-full text-center rounded-xl border border-slate-300 px-4 py-2.5 text-slate-700 hover:bg-slate-50">
               Imprimir / Guardar PDF
             </a>

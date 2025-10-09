@@ -24,10 +24,11 @@ type ViewRec = {
 export class RecsDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private api   = inject(RecsService);
+  private api = inject(RecsService);
 
   loading = signal<boolean>(false);
   rec = signal<ViewRec | null>(null);
+
 
   async ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -37,8 +38,8 @@ export class RecsDetailComponent implements OnInit {
 
   private map(d: RecDetail): ViewRec {
     const nombre = [d?.clientes?.nombre, d?.clientes?.apellido].filter(Boolean).join(' ').trim() || 'Cliente';
-    const tel    = (d?.clientes?.telefono || '—').toString().trim();
-    const mail   = (d?.clientes?.email || '—').toString().trim();
+    const tel = (d?.clientes?.telefono || '—').toString().trim();
+    const mail = (d?.clientes?.email || '—').toString().trim();
     const opts: ViewOpt[] = (d?.recomendaciones_detalle || [])
       .slice(0, 3)
       .map(x => ({ nombre: x?.productos?.nombre || '—', sku: x?.productos?.sku ?? null, precio: x?.productos?.precioventa ?? null }));
@@ -66,7 +67,7 @@ export class RecsDetailComponent implements OnInit {
     }
   }
 
-  back() { this.router.navigate(['/recs']); }
+  back() { this.router.navigate(['/recomendaciones']); }
 
   async posponer(days: number) {
     const r = this.rec(); if (!r) return;
@@ -86,24 +87,39 @@ export class RecsDetailComponent implements OnInit {
   }
 
   waLink(): string {
-    const r = this.rec(); if (!r) return 'javascript:void(0)';
+    const r = this.rec();
+    if (!r) return 'javascript:void(0)';
     const digits = (r.telefono || '').replace(/\D+/g, '');
     if (!digits) return 'javascript:void(0)';
     const number = digits.startsWith('502') ? digits : `502${digits}`;
-    const labels = ['Opción 1', 'Opción 2', 'Plus'];
-    const chips  = r.opciones.map((o, i) => `${labels[i] || 'Opción'}: ${o.nombre}`).join(' · ');
-    const text   = `¡Hola ${r.clienteNombre}!%0A${r.mensaje}%0A%0ASugerencias: ${chips}`;
-    return `https://wa.me/${number}?text=${text}`;
+    const msg = (r.mensaje || '').toString();
+    return `https://wa.me/${number}?text=${encodeURIComponent(msg)}`;
   }
 
   labelProx(iso: string | null): string {
     if (!iso) return '—';
     const now = new Date();
-    const dt  = new Date(iso);
-    const d   = Math.round((dt.getTime() - now.getTime()) / 86400000);
+    const dt = new Date(iso);
+    const d = Math.round((dt.getTime() - now.getTime()) / 86400000);
     if (d === 0) return 'hoy';
     if (d === 1) return 'en 1 día';
-    if (d < 0)   return `en ${Math.abs(d)} día${Math.abs(d) === 1 ? '' : 's'}`;
+    if (d < 0) return `en ${Math.abs(d)} día${Math.abs(d) === 1 ? '' : 's'}`;
     return `en ${d} días`;
+  }
+  async sendWhatsApp() {
+    const r = this.rec(); if (!r) return;
+
+    const digits = (r.telefono || '').replace(/\D+/g, '');
+    if (!digits) { alert('El cliente no tiene teléfono válido.'); return; }
+    const number = digits.startsWith('502') ? digits : `502${digits}`;
+
+    const msg = (r.mensaje || '').toString();
+    const url = `https://wa.me/${number}?text=${encodeURIComponent(msg)}`;
+
+    // Marca enviada (no bloquear WhatsApp si falla)
+    try { await firstValueFrom(this.api.markSent(r.id)); }
+    catch (e) { console.warn('[markSent] falló', e); }
+
+    window.open(url, '_blank');
   }
 }

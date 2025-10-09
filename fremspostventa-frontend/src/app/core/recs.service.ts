@@ -10,8 +10,8 @@ export type RecEstado = 'pendiente' | 'enviada' | 'descartada' | 'vencida';
 /** Item para el listado (/api/recs) */
 export interface RecListItem {
   id: number;
-  fecha: string;                     // ISO (UTC)
-  next_action_at: string | null;     // ISO (UTC)
+  fecha: string;
+  next_action_at: string | null;
   estado: RecEstado;
   cliente: {
     id: number;
@@ -38,9 +38,9 @@ export interface RecsListResp {
 /** Detalle de recomendación (/api/recs/:id y /api/recs/generate) */
 export interface RecDetail {
   idrecomendacion: number;
-  fechageneracion: string;           // ISO (UTC)
+  fechageneracion: string;
   estado: RecEstado;
-  next_action_at: string | null;     // ISO (UTC)
+  next_action_at: string | null;
   justificacion: string | null;
   clientes: {
     idcliente: number;
@@ -51,7 +51,7 @@ export interface RecDetail {
   } | null;
   recomendaciones_detalle: Array<{
     prioridad: number;
-    score: number | string;          // puede venir como string del SQL
+    score: number | string;
     razon?: string | null;
     productos: {
       idproducto: number;
@@ -83,7 +83,7 @@ export class RecsService {
       .set('page', String(opts.page ?? 1))
       .set('size', String(opts.size ?? 10));
     if (opts.search?.trim()) params = params.set('search', opts.search.trim());
-    if (opts.estado)          params = params.set('estado', opts.estado);
+    if (opts.estado) params = params.set('estado', opts.estado);
     return this.http.get<RecsListResp>(this.API, { params });
   }
 
@@ -111,8 +111,8 @@ export class RecsService {
   /** Generar manualmente (desde Clientes → botón IA) */
   generate(payload: {
     idcliente: number;
-    top_n?: number;                 // default 3 en backend
-    alert_vendedores?: boolean;     // opcional
+    top_n?: number;
+    alert_vendedores?: boolean;
   }): Observable<{ ok: boolean; rec: RecDetail }> {
     return this.http.post<{ ok: boolean; rec: RecDetail }>(
       `${this.API}/generate`,
@@ -136,4 +136,12 @@ export class RecsService {
       { params }
     );
   }
+
+  markSent(id: number) {
+    return this.http.post<{ ok: boolean; id: number; estado: RecEstado; next_action_at: string | null }>(
+      `${this.API}/${id}/sent`,
+      {}
+    );
+  }
 }
+

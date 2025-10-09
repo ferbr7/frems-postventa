@@ -2,7 +2,6 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './home/home';
 import { LoginComponent } from './auth/login/login';
 import { ForgotPasswordComponent } from './auth/forgot-password/forgot-password';
-import { VentaNuevaComponent } from './ventas/venta-nueva/venta-nueva';
 import { ProductoNuevoComponent } from './productos/producto-nuevo/producto-nuevo';
 import { ReportesComponent } from './reportes/reportes';
 import { ResetPasswordComponent } from './auth/recuperar-reset/recuperar-reset';
@@ -18,6 +17,7 @@ import { VentasListComponent } from './ventas/ventas-list/ventas-list';
 import { VentasPrintComponent } from './ventas/ventas-print/ventas-print';
 import { RecsListComponent } from './recomendaciones/recs-list/recs-list';
 import { RecsDetailComponent } from './recomendaciones/recs-detail/recs-detail';
+import { RecsPrintComponent } from './recomendaciones/recs-print/recs-print';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -39,7 +39,6 @@ export const routes: Routes = [
   { path: 'usuarios/:id/ver', component: UsuariosFormComponent },
 
   // Ventas
-  { path: 'venta/nueva', component: VentaNuevaComponent },
   { path: 'ventas', component: VentasListComponent },
   { path: 'ventas/nueva', component: VentasFormComponent },
   { path: 'ventas/:id/imprimir', component: VentasPrintComponent },
@@ -59,29 +58,9 @@ export const routes: Routes = [
 
   //Recs
   { path: 'recomendaciones', component: RecsListComponent},
+  { path: 'recomendaciones/:id/ver', component: RecsDetailComponent},
   { path: 'recomendaciones/:id', component: RecsDetailComponent},
-
-  // IA (lazy)
-  {
-    path: 'ia/recomendaciones',
-    children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('./ia/ia-list/ia-list').then(m => m.IaListComponent),
-      },
-      {
-        path: ':id',
-        loadComponent: () =>
-          import('./ia/ia-detail/ia-detail').then(m => m.IaDetailComponent),
-      },
-      {
-        path: ':id/imprimir',
-        loadComponent: () =>
-          import('./ia/ia-print/ia-print').then(m => m.IaPrintComponent),
-      },
-    ],
-  },
+  { path: 'recomendaciones/:id/imprimir', component: RecsPrintComponent},
 
   // redirect por defecto
   { path: '', redirectTo: 'login', pathMatch: 'full' },
