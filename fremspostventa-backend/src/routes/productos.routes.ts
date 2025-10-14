@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import prisma from '../prisma';
+import { logActivity } from '../services/activity';
 
 export const productosRouter = Router();
 
@@ -80,6 +81,23 @@ productosRouter.post('/', async (req, res) => {
         duracionestimadodias: true,
       }
     });
+    try {
+      await logActivity({
+        who_user_id: (req as any)?.user?.idusuario ?? null,  
+        what: `Nuevo producto: ${prod.nombre} (SKU ${prod.sku})`,
+        type: 'otro',
+        meta: {
+          idproducto: prod.idproducto,
+          sku: prod.sku,
+          categoria: prod.categoria,
+          precio: prod.precioventa,
+          stock: prod.stock,
+          activo: prod.activo,
+        },
+      });
+    } catch (e) {
+      console.warn('[actividad] no se pudo registrar alta de producto:', (e as any)?.message || e);
+    }
 
     return res.json({ ok: true, producto: prod });
   } catch (err: any) {
@@ -245,6 +263,23 @@ productosRouter.put('/:id', async (req, res) => {
         duracionestimadodias: true,
       },
     });
+    try {
+      await logActivity({
+        who_user_id: (req as any)?.user?.idusuario ?? null,
+        what: `Actualización de producto: ${prod.nombre} (SKU ${prod.sku})`,
+        type: 'otro',
+        meta: {
+          idproducto: prod.idproducto,
+          sku: prod.sku,
+          categoria: prod.categoria,
+          precio: prod.precioventa,
+          stock: prod.stock,
+          activo: prod.activo,
+        },
+      });
+    } catch (e) {
+      console.warn('[actividad] no se pudo registrar actu de producto:', (e as any)?.message || e);
+    }
 
     return res.json({ ok: true, producto: prod });
   } catch (err: any) {

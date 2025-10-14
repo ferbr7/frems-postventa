@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import prisma from '../prisma';
+import { logActivity } from '../services/activity';
 
 export const ventasRouter = Router();
 
@@ -120,11 +121,34 @@ ventasRouter.post('/', async (req, res) => {
       return venta;
     });
 
+    try {
+      let clienteNombre = 'Cliente';
+      if (idcliente) {
+        const c = await prisma.clientes.findUnique({
+          where: { idcliente: Number(idcliente) },
+          select: { nombre: true, apellido: true }
+        });
+        clienteNombre = [c?.nombre, c?.apellido].filter(Boolean).join(' ').trim() || 'Cliente';
+      }
+
+      const whoId = (req as any)?.user?.idusuario ?? (Number(idusuario) || null);
+
+      await logActivity({
+        who_user_id: whoId,
+        what: `Venta #${result.idventa} a ${clienteNombre}`,
+        type: 'venta',
+        meta: { idventa: result.idventa, total, idcliente: idcliente ? Number(idcliente) : null }
+      });
+    } catch (e) {
+      console.warn('[actividad] no se pudo registrar venta:', (e as any)?.message || e);
+    }
+
     return res.json({ ok: true, idventa: result.idventa, total });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ ok: false, message: 'Error registrando venta' });
   }
+
 });
 
 // ------------------- GET /api/ventas (listado) -------------------
@@ -137,14 +161,14 @@ ventasRouter.get('/', async (req, res) => {
 
     // === Filtros de fecha con el mismo helper que clientes ===
     const fechaFrom = toDateOnlyUTC(toStr(req.query.fecha_from));
-    const fechaTo   = toDateOnlyUTC(toStr(req.query.fecha_to));
+    const fechaTo = toDateOnlyUTC(toStr(req.query.fecha_to));
 
     const where: any = {};
 
     if (fechaFrom || fechaTo) {
       where.fecha = {};
       if (fechaFrom) where.fecha.gte = fechaFrom;
-      if (fechaTo)   where.fecha.lte = fechaTo;
+      if (fechaTo) where.fecha.lte = fechaTo;
     }
 
     if (estado === 'registrada' || estado === 'cancelada') {
@@ -290,3 +314,4 @@ ventasRouter.get('/:id', async (req, res) => {
     res.status(500).json({ ok: false, message: 'Error obteniendo venta' });
   }
 });
+

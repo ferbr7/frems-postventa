@@ -1,1 +1,6 @@
 <router-outlet></router-outlet>
+
+<!-- Splash opcional -->
+<div *ngIf="bootLoading()" class="fixed inset-0 grid place-items-center bg-white/70 z-50">
+  <div class="rounded-xl border px-4 py-3 bg-white shadow text-slate-700">Cargando…</div>
+</div>

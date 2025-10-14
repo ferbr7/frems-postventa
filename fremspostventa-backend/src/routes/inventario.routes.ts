@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import prisma from '../prisma';
+import { logActivity } from '../services/activity';
 
 export const inventarioRouter = Router();
 
@@ -44,7 +45,7 @@ inventarioRouter.post('/entradas', async (req, res) => {
     // Verificar producto existe
     const prod = await prisma.productos.findUnique({
       where: { idproducto: idProd },
-      select: { idproducto: true, stock: true }
+      select: { idproducto: true, nombre: true, sku: true, stock: true }
     });
     if (!prod) return res.status(404).json({ ok:false, message:'Producto no encontrado.' });
 
@@ -70,6 +71,27 @@ inventarioRouter.post('/entradas', async (req, res) => {
         select: { idproducto: true, stock: true }
       })
     ]);
+        try {
+      const whoId = (req as any)?.user?.idusuario ?? (idUser ?? null);
+      await logActivity({
+        who_user_id: whoId,
+        what: `Entrada de inventario: +${cant} a ${prod.nombre} (SKU ${prod.sku || '—'})`,
+        type: 'tarea',
+        meta: {
+          identrada: entrada.identrada,
+          idproducto: idProd,
+          sku: prod.sku,
+          cantidad: cant,
+          preciocosto: costo,
+          fechaentrada: entrada.fechaentrada,
+          proveedor: prov,
+          stock_before: prod.stock,
+          stock_after: updated.stock
+        }
+      });
+    } catch (e) {
+      console.warn('[actividad] no se pudo registrar entrada inventario:', (e as any)?.message || e);
+    }
 
     return res.json({ ok:true, entrada, producto: updated });
   } catch (err) {

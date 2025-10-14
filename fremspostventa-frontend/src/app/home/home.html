@@ -1,68 +1,70 @@
 <div class="min-h-screen bg-neutral-50">
   <div class="max-w-7xl mx-auto px-6 py-8">
-    <!-- Topbar minimal -->
-   
-      <div class="rounded-2xl bg-gradient-to-r from-emerald-700 to-emerald-600 p-6 flex items-center justify-between">
 
-        <!-- Logo y nombre -->
-        <div class="flex items-center gap-3">
-          <img src="/assets/Logo.jpg" alt="FREM'S" class="h-12 w-auto rounded-md bg-white p-1 shadow" />
-          <div class="flex flex-col">
-            <span class="text-white text-lg font-semibold">Perfumería FREM'S</span>
-            <span class="text-emerald-100 text-xs mt-0.5">
-              {{ role === 'admin' ? 'Administrador' : 'Vendedor' }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Controles -->
-        <div class="flex items-center gap-3">
-
-          <!-- Cambiar rol -->
-          <div class="flex items-center gap-2">
-            <button (click)="setRole('vendedor')"
-              class="text-sm px-3 py-1.5 rounded-lg border border-white/30 text-white hover:bg-white/10">
-              Vendedor
-            </button>
-            <button (click)="setRole('admin')"
-              class="text-sm px-3 py-1.5 rounded-lg border border-white/30 text-white hover:bg-white/10">
-              Admin
-            </button>
-          </div>
-
-          <!-- Notificaciones -->
-          <button class="p-2 rounded-lg hover:bg-white/10" aria-label="Notificaciones">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-              class="text-white">
-              <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14v-3a6 6 0 1 0-12 0v3a2 2 0 0 1-.6 1.4L4 17h5" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-          </button>
-
-          <!-- Avatar -->
-          <div class="h-9 w-9 rounded-full bg-emerald-300/70 ring-2 ring-white/70"></div>
+    <!-- Topbar -->
+    <div class="rounded-2xl bg-gradient-to-r from-emerald-700 to-emerald-600 p-6 flex items-center justify-between">
+      <!-- Logo y nombre -->
+      <div class="flex items-center gap-3">
+        <img src="/assets/Logo.jpg" alt="FREM'S" class="h-12 w-auto rounded-md bg-white p-1 shadow" />
+        <div class="flex flex-col">
+          <span class="text-white text-lg font-semibold">Perfumería FREM'S</span>
+          <span class="text-emerald-100 text-xs mt-0.5">
+            {{ role === 'admin' ? 'Administrador' : 'Vendedor' }}
+          </span>
         </div>
       </div>
-   
+
+      <!-- Controles -->
+      <!-- Controles -->
+      <div class="flex items-center gap-3">
+        <!-- Notificaciones -->
+        <button class="p-2 rounded-lg hover:bg-white/10" aria-label="Notificaciones" title="Notificaciones">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            class="text-white">
+            <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14v-3a6 6 0 1 0-12 0v3a2 2 0 0 1-.6 1.4L4 17h5" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+        </button>
+
+        <!-- Avatar + dropdown -->
+        <div class="relative" #userMenu>
+          <!-- Botón avatar -->
+          <button (click)="toggleUserMenu(); $event.stopPropagation()" class="h-9 w-9 rounded-full bg-emerald-300/70 ring-2 ring-white/70 grid place-items-center
+           text-emerald-900 font-semibold select-none">
+            {{ initials }}
+          </button>
+
+          <!-- Panel -->
+          <div *ngIf="userMenuOpen" (click)="$event.stopPropagation()"
+            class="absolute right-0 mt-2 w-44 rounded-xl bg-white shadow-lg ring-1 ring-black/5 overflow-hidden z-10">
+            <div class="px-4 py-3">
+              <div class="text-sm text-slate-500">Sesión</div>
+              <div class="text-slate-900 font-medium truncate">
+                {{ auth.user?.nombre }} {{ auth.user?.apellido }}
+              </div>
+              <div class="text-xs text-slate-500 truncate">{{ auth.user?.email || '—' }}</div>
+            </div>
+            <div class="border-t border-slate-100"></div>
+            <button (click)="logout()" class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50">
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="mx-auto max-w-7xl px-4 py-8 grid grid-cols-12 gap-6">
 
-      <!-- Sidebar más limpio -->
-
+      <!-- Sidebar -->
       <aside #sidebar class="hidden md:block col-span-3 lg:col-span-2">
         <nav class="space-y-2">
-          <a *ngFor="let item of menu" [routerLink]="item.link" (mouseenter)="onEnter(item.link)"
-            class="group flex items-center gap-3 px-4 py-3 rounded-xl transition" [ngClass]="
-         isOn(item.link)
-           ? 'bg-emerald-600 text-white shadow-sm'
-           : 'text-neutral-800 hover:bg-emerald-50'
-       ">
-
+          <a *ngFor="let item of menu" [routerLink]="item.link" (click)="goOrSoon(item, $event)"
+            (mouseenter)="onEnter(item.link)" [class.hidden]="!item.roles.includes(role)"
+            class="group flex items-center gap-3 px-4 py-3 rounded-xl transition"
+            [ngClass]="isOn(item.link) ? 'bg-emerald-600 text-white shadow-sm' : 'text-neutral-800 hover:bg-emerald-50'">
             <!-- Ícono -->
-            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg transition" [ngClass]="
-              isOn(item.link)
-                ? 'text-white'
-                : 'text-gray-500 group-hover:text-emerald-700'
-            ">
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg transition"
+              [ngClass]="isOn(item.link) ? 'text-white' : 'text-gray-500 group-hover:text-emerald-700'">
 
               <!-- Home -->
               <svg *ngIf="item.icon==='home'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -71,7 +73,7 @@
                 <path d="M4 10v10h16V10" />
               </svg>
 
-              <!-- Ventas -->
+              <!-- Cart -->
               <svg *ngIf="item.icon==='cart'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="9" cy="21" r="1" />
@@ -79,7 +81,7 @@
                 <path d="M1 1h4l2.7 12.4A2 2 0 0 0 9.6 15h7.8a2 2 0 0 0 2-1.6L22 6H6" />
               </svg>
 
-              <!-- Clientes -->
+              <!-- Users -->
               <svg *ngIf="item.icon==='users'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
@@ -88,7 +90,7 @@
                 <path d="M16 3.1a4 4 0 0 1 0 7.8" />
               </svg>
 
-              <!-- Productos -->
+              <!-- Bottle -->
               <svg *ngIf="item.icon==='bottle'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="9" y="3" width="6" height="3" rx="1" />
@@ -96,41 +98,50 @@
                 <path d="M7 8h10a2 2 0 0 1 2 2v8a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-8a2 2 0 0 1 2-2z" />
               </svg>
 
-              <!-- Reportes -->
+              <!-- Chart -->
               <svg *ngIf="item.icon==='chart'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 3v18h18" />
                 <path d="M7 13l3 3 7-7" />
               </svg>
 
-              <!-- Recordatorios -->
+              <!-- Bell (si lo usas en otro lugar) -->
               <svg *ngIf="item.icon==='bell'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14v-3a6 6 0 1 0-12 0v3a2 2 0 0 1-.6 1.4L4 17h5" />
                 <path d="M13.7 21a2 2 0 0 1-3.4 0" />
               </svg>
 
-              <!-- Configuración -->
+              <!-- Settings -->
               <svg *ngIf="item.icon==='settings'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3" />
                 <path
                   d="M19.4 15a1.6 1.6 0 0 0 .3 1.7l.1.1-1.5 1.5-.1-.1a1.6 1.6 0 0 0-1.7-.3l-.2.1a1.6 1.6 0 0 0-1 1.5V21h-2v-.3a1.6 1.6 0 0 0-1-1.5l-.2-.1a1.6 1.6 0 0 0-1.7.3l-.1.1L5.7 17l.1-.1a1.6 1.6 0 0 0 .3-1.7l-.1-.2a1.6 1.6 0 0 0-1.5-1H4v-2h.3a1.6 1.6 0 0 0 1.5-1l.1-.2a1.6 1.6 0 0 0-.3-1.7l-.1-.1L7 5.7l.1.1a1.6 1.6 0 0 0 1.7.3l.2-.1a1.6 1.6 0 0 0 1-1.5V4h2v.3a1.6 1.6 0 0 0 1 1.5l.2.1a1.6 1.6 0 0 0 1.7-.3l.1-.1L18.3 7l-.1.1a1.6 1.6 0 0 0-.3 1.7l.1.2a1.6 1.6 0 0 0 1.5 1H20v2h-.3a1.6 1.6 0 0 0-1.5 1l-.1.2z" />
               </svg>
+
+              <!-- AI -->
+              <svg *ngIf="item.icon==='ai'" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3l3 3-3 3-3-3 3-3zM5 10l3 3-3 3-3-3 3-3zm14 0l3 3-3 3-3-3 3-3zM12 17l3 3-3 3-3-3 3-3z" />
+              </svg>
             </span>
 
             <!-- Texto -->
-            <span class="font-medium">{{ item.label }}</span>
+            <span class="font-medium">
+              {{ item.label }}
+              <small *ngIf="item.soon"
+                class="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">Pronto</small>
+            </span>
           </a>
         </nav>
       </aside>
 
-
-      <!-- Main -->
+      <!-- Main (igual que lo tienes) -->
       <main class="col-span-12 md:col-span-9 lg:col-span-10 space-y-8">
-        <!-- KPIs minimal -->
+        <!-- KPIs -->
         <section class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div *ngFor="let k of kpis" class="rounded-xl bg-white p-5 shadow-sm border border-neutral-200">
+          <div *ngFor="let k of kpis()" class="rounded-xl bg-white p-5 shadow-sm border border-neutral-200">
             <p class="text-sm text-neutral-600">{{ k.label }}</p>
             <div class="mt-2 flex items-end justify-between">
               <h3 class="text-2xl font-semibold text-neutral-900">{{ k.value }}{{ k.suffix }}</h3>
@@ -151,7 +162,7 @@
               <span class="flex items-center gap-3 text-neutral-800 font-medium">
                 <span
                   class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-neutral-100 text-neutral-700">
-                  <!-- iconitos: userPlus/cart/bottle/chart/users -->
+                  <!-- iconitos -->
                   <svg *ngIf="a.icon==='userPlus'" width="18" height="18" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="1.8">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
@@ -194,7 +205,7 @@
           <div class="lg:col-span-2 space-y-3">
             <h4 class="text-neutral-900 font-semibold">Actividad reciente</h4>
             <div class="rounded-xl bg-white border border-neutral-200 divide-y divide-neutral-200">
-              <div *ngFor="let r of activity" class="px-4 py-3 flex items-center justify-between">
+              <div *ngFor="let r of activity()" class="px-4 py-3 flex items-center justify-between">
                 <div>
                   <p class="text-neutral-800">{{ r.what }}</p>
                   <p class="text-xs text-neutral-500">{{ r.who }} • {{ r.when }}</p>
@@ -209,15 +220,35 @@
         <section *ngIf="role==='admin'" class="space-y-3">
           <h4 class="text-neutral-900 font-semibold">Panel administrador</h4>
           <div class="grid md:grid-cols-2 gap-4">
+
+            <!-- Top productos -->
             <div class="rounded-xl bg-white p-5 border border-neutral-200">
               <h5 class="font-medium text-neutral-900">Top productos</h5>
-              <ul class="mt-3 space-y-2">
-                <li *ngFor="let p of topProducts" class="flex items-center justify-between">
-                  <span class="text-neutral-800">{{ p.name }}</span>
-                  <span class="text-neutral-600">{{ p.sales }} ventas</span>
-                </li>
-              </ul>
+
+              <!-- Loading -->
+              <div *ngIf="topLoading(); else topList" class="mt-3 text-sm text-neutral-500">
+                Cargando…
+              </div>
+
+              <!-- Lista -->
+              <ng-template #topList>
+                <ng-container *ngIf="topProducts().length; else emptyTop">
+                  <ul class="mt-3 space-y-2">
+                    <li *ngFor="let p of topProducts()" class="flex items-center justify-between">
+                      <span class="text-neutral-800">{{ p.name }}</span>
+                      <span class="text-neutral-600">{{ p.sales }} ventas</span>
+                    </li>
+                  </ul>
+                </ng-container>
+              </ng-template>
+
+              <!-- Sin datos -->
+              <ng-template #emptyTop>
+                <div class="mt-3 text-sm text-neutral-500">Sin datos en el periodo.</div>
+              </ng-template>
             </div>
+
+            <!-- Usuarios & roles (igual) -->
             <div class="rounded-xl bg-white p-5 border border-neutral-200">
               <h5 class="font-medium text-neutral-900">Usuarios & roles</h5>
               <p class="text-neutral-600 text-sm mt-2">
@@ -228,6 +259,7 @@
                 Ir a Usuarios
               </a>
             </div>
+
           </div>
         </section>
       </main>

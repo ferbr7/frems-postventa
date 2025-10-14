@@ -24,6 +24,7 @@ model usuarios {
   activo              Boolean?              @default(true)
   fechaalta           DateTime?             @default(dbgenerated("CURRENT_DATE")) @db.Date
   idrol               Int?
+  actividad           actividad[]
   inventario_entradas inventario_entradas[]
   roles               roles?                @relation(fields: [idrol], references: [idrol], onDelete: NoAction, onUpdate: NoAction)
   ventas              ventas[]
@@ -181,4 +182,26 @@ model rec_metrics {
 
   @@id([idcliente, idproducto])
   @@index([idcliente, last_date, median_days], map: "ix_rec_metrics_due")
+}
+
+model actividad {
+  id          Int           @id @default(autoincrement())
+  created_at  DateTime      @default(now()) @db.Timestamptz(6)
+  who_user_id Int?
+  what        String
+  type        activity_type @default(otro)
+  meta        Json?
+  usuarios    usuarios?     @relation(fields: [who_user_id], references: [idusuario], onUpdate: NoAction, map: "actividad_who_fk")
+
+  @@index([created_at], map: "idx_actividad_created_at")
+  @@index([type], map: "idx_actividad_type")
+  @@index([who_user_id], map: "idx_actividad_who_user_id")
+}
+
+enum activity_type {
+  venta
+  cliente
+  recomendacion
+  tarea
+  otro
 }

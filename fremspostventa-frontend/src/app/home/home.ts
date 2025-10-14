@@ -1,17 +1,15 @@
-import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ElementRef, HostListener, ViewChild, OnInit, computed, signal } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { AuthService, Role } from '../core/auth.service';
+import { HomeService } from '../core/home.service';
 
 type KPI = { label: string; value: number; suffix?: string; trend?: string };
-type QuickAction = {
-  label: string;
-  icon: 'cart' | 'userPlus' | 'bottle' | 'users' | 'chart';
-  link: string;
-  roles: ('admin' | 'vendedor')[];
-};
+type QuickAction = { label: string; icon: 'cart' | 'userPlus' | 'bottle' | 'users' | 'chart'; link: string; roles: Role[]; };
 type Activity = { what: string; who: string; when: string };
-type TopProduct = { name: string; sales: number };
+type TopProduct = { name: string; sales: number; amount?: number };
+type MenuItem = { label: string; link: string; icon: 'home' | 'cart' | 'users' | 'bottle' | 'chart' | 'bell' | 'settings' | 'ai'; roles: Role[]; soon?: boolean; };
 
 @Component({
   selector: 'app-home',
@@ -19,35 +17,140 @@ type TopProduct = { name: string; sales: number };
   imports: [CommonModule, RouterModule],
   templateUrl: './home.html',
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit {
+
+  @ViewChild('userMenu', { static: false }) userMenuRef!: ElementRef<HTMLElement>;
+  userMenuOpen = false;
+
+  toggleUserMenu() {
+    this.userMenuOpen = !this.userMenuOpen;
+  }
+  closeUserMenu() { this.userMenuOpen = false; }
+
+  logout() {
+    this.auth.logout();
+    this.router.navigate(['/login']);
+  }
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(ev: MouseEvent) {
+    if (!this.userMenuRef) return;
+    const inside = this.userMenuRef.nativeElement.contains(ev.target as Node);
+    if (!inside) this.userMenuOpen = false;
+  }
+
   @ViewChild('sidebar', { static: true }) sidebarRef!: ElementRef<HTMLElement>;
 
-  // --- estado del menú
-  hoveredLink: string | null = null; // item bajo cursor
-  menuHover = false;                 // el mouse está dentro del sidebar
-  activeLink = '/home';              // activo real (fallback: inicio)
-
-  private leaveTimer: ReturnType<typeof setTimeout> | null = null;
-
-  constructor(private router: Router) {
-    // activo real por navegación
+  constructor(
+    private router: Router,
+    public auth: AuthService,
+    private home: HomeService,
+  ) {
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-      .subscribe((e) => {
-        this.activeLink = e.urlAfterRedirects.split('?')[0].split('#')[0] || '/home';
+      .subscribe(e => this.activeLink = e.urlAfterRedirects.split('?')[0].split('#')[0] || '/home');
+    this.activeLink = (this.router.url || '').split('?')[0].split('#')[0] || '/home';
+  }
+
+
+  // ====== Estado UI ======
+  hoveredLink: string | null = null;
+  menuHover = false;
+  activeLink = '/home';
+  private leaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // ====== Datos dinámicos ======
+  kpis = signal<KPI[]>([
+    { label: 'Ventas hoy', value: 0, trend: '—' },
+    { label: 'Clientes activos', value: 0, trend: '—' },
+    { label: 'Alertas', value: 0, trend: '—' },
+  ]);
+  loadingKpis = signal<boolean>(true);
+
+  activity = signal<Activity[]>([]);
+  loadingActivity = signal<boolean>(true);
+  topProducts = signal<TopProduct[]>([]);
+  topLoading = signal<boolean>(false);
+
+  ngOnInit(): void {
+    // cargar KPIs
+    this.loadingKpis.set(true);
+    this.home.kpis().subscribe({
+      next: (res) => {
+        const k = res.kpis;
+        this.kpis.set([
+          { label: 'Ventas hoy', value: k.ventasHoy, trend: k.ventasTrend || '—' },
+          { label: 'Clientes activos', value: k.clientesActivos, trend: '—' },
+          { label: 'Alertas', value: k.alertasPendientes, trend: '—' },
+        ]);
+        this.loadingKpis.set(false);
+      },
+      error: () => this.loadingKpis.set(false),
+    });
+
+    // cargar actividad
+    this.loadingActivity.set(true);
+    this.home.activity(5).subscribe({
+      next: (res) => {
+        const items = (res.items || []).map(r => ({
+          what: r.what,
+          who: r.who,
+          when: new Intl.DateTimeFormat('es-GT', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(r.when)),
+        }));
+        this.activity.set(items);
+        this.loadingActivity.set(false);
+      },
+      error: () => this.loadingActivity.set(false),
+    });
+    if (this.role === 'admin') {
+      this.home.topProducts({ days: 90, limit: 5, by: 'units' }).subscribe({
+        next: ({ items }) => {
+          this.topProducts.set((items ?? []).map(r => ({
+            name: r.nombre,
+            sales: r.unidades,
+          })));
+          this.topLoading.set(false);
+        },
+        error: () => { /* opcional: manejar error */
+          this.topProducts.set([]);
+          this.topLoading.set(false);
+        }
+
       });
-
-    // activo real al cargar (por si no hubo navegación todavía)
-    const now = (this.router.url || '').split('?')[0].split('#')[0];
-    this.activeLink = now || '/home';
+    }
   }
 
-  // --- hover por item
-  onEnter(link: string) {
-    this.hoveredLink = link;
+  // ====== Rol y UI derivados ======
+  get role(): Role { return this.auth.role; }
+
+  setRole(r: Role) {
+    const u = this.auth.user;
+    if (!u) return;
+    this.auth.setUser({ ...u, rol: r });
   }
 
-  // --- detector global: si el mouse está fuera del sidebar, se apaga hover
+  get initials(): string { return this.auth.initials; }
+
+  menu: MenuItem[] = [
+    { label: 'Inicio', link: '/home', icon: 'home', roles: ['admin', 'vendedor'] },
+    { label: 'Ventas', link: '/ventas', icon: 'cart', roles: ['admin', 'vendedor'] },
+    { label: 'Clientes', link: '/clientes', icon: 'users', roles: ['admin', 'vendedor'] },
+    { label: 'Productos', link: '/productos', icon: 'bottle', roles: ['admin', 'vendedor'] },
+    { label: 'Usuarios', link: '/usuarios', icon: 'users', roles: ['admin'] },
+    { label: 'Reportes', link: '/reportes', icon: 'chart', roles: ['admin'] },
+    { label: 'Recs IA', link: '/recomendaciones', icon: 'ai', roles: ['admin', 'vendedor'] },
+    { label: 'Configuración', link: '/config', icon: 'settings', roles: ['admin', 'vendedor'], soon: true },
+  ];
+
+  quickActions: QuickAction[] = [
+    { label: 'Nueva venta', icon: 'cart', link: '/ventas/nueva', roles: ['admin', 'vendedor'] },
+    { label: 'Nuevo cliente', icon: 'userPlus', link: '/clientes/nuevo', roles: ['admin', 'vendedor'] },
+    { label: 'Nuevo producto', icon: 'bottle', link: '/productos/nuevo', roles: ['admin', 'vendedor'] },
+    { label: 'Nuevo usuario', icon: 'users', link: '/usuarios/nuevo', roles: ['admin'] },
+  ];
+
+  // === hover sidebar ===
+  onEnter(link: string) { this.hoveredLink = link; }
+
   @HostListener('document:mousemove', ['$event'])
   onDocMousemove(ev: MouseEvent) {
     const inside = this.sidebarRef?.nativeElement?.contains(ev.target as Node);
@@ -55,60 +158,18 @@ export class HomeComponent {
       this.menuHover = true;
       if (this.leaveTimer) clearTimeout(this.leaveTimer);
     } else {
-      // pequeño debounce para evitar parpadeo al pasar por bordes
       if (this.leaveTimer) clearTimeout(this.leaveTimer);
-      this.leaveTimer = setTimeout(() => {
-        this.menuHover = false;
-        this.hoveredLink = null; // ← vuelve a pintar el activo real (Inicio si estás en /home)
-      }, 7);
+      this.leaveTimer = setTimeout(() => { this.menuHover = false; this.hoveredLink = null; }, 7);
     }
   }
 
-  // decide si el link se pinta “activo” (verde)
   isOn(link: string): boolean {
-    if (this.menuHover) return this.hoveredLink === link; // mientras esté dentro, manda el hover
-    // activo real (incluye subrutas)
+    if (this.menuHover) return this.hoveredLink === link;
     return this.activeLink === link || this.activeLink.startsWith(link + '/');
   }
 
-  // ====== DATA DE LA MAQUETA ======
-  role: 'admin' | 'vendedor' = 'vendedor';
-  setRole(r: 'admin' | 'vendedor') { this.role = r; }
-
-  menu = [
-    { label: 'Inicio',        link: '/home',          icon: 'home' },
-    { label: 'Ventas',        link: '/ventas',        icon: 'cart' },
-    { label: 'Clientes',      link: '/clientes',      icon: 'users' },
-    { label: 'Productos',     link: '/productos',     icon: 'bottle' },
-    { label: 'Usuarios',      link: '/usuarios',      icon: 'users' },
-    { label: 'Reportes',      link: '/reportes',      icon: 'chart' },
-    { label: 'Recordatorios', link: '/recordatorios', icon: 'bell' },
-    { label: 'Configuración', link: '/config',        icon: 'settings' },
-  ];
-
-  kpis: KPI[] = [
-    { label: 'Ventas hoy',        value: 18,  trend: '+12%' },
-    { label: 'Clientes activos',  value: 126, trend: '+8%'  },
-    { label: 'Alertas',           value: 3,   trend: '−1'   },
-  ];
-
-  quickActions: QuickAction[] = [
-    { label: 'Nueva venta',   icon: 'cart',     link: '/ventas/nueva',   roles: ['admin','vendedor'] },
-    { label: 'Nuevo cliente', icon: 'userPlus', link: '/clientes/nuevo', roles: ['admin','vendedor'] },
-    { label: 'Producto',      icon: 'bottle',   link: '/productos',      roles: ['admin','vendedor'] },
-    { label: 'Usuarios',      icon: 'users',    link: '/usuarios',       roles: ['admin'] },
-    { label: 'Reportes',      icon: 'chart',    link: '/reportes',       roles: ['admin'] },
-  ];
-
-  activity: Activity[] = [
-    { what: 'Vendiste Perfume Aurora 50ml', who: 'Tú',   when: 'hace 10 min' },
-    { what: 'Nuevo cliente: Luis M.',       who: 'Ana',  when: 'hace 1 h'    },
-    { what: 'Seguimiento posventa agendado',who: 'Karla',when: 'ayer'        },
-  ];
-
-  topProducts: TopProduct[] = [
-    { name: 'Aurora 50ml',        sales: 42 },
-    { name: 'Citrus Bloom 100ml', sales: 31 },
-    { name: 'Noir Intense 30ml',  sales: 27 },
-  ];
+  goOrSoon(item: MenuItem, $event: MouseEvent) {
+    if (item.soon) { $event.preventDefault(); alert('Próximamente disponible'); return; }
+    this.router.navigate([item.link]);
+  }
 }

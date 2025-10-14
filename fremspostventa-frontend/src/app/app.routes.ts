@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+
 import { HomeComponent } from './home/home';
 import { LoginComponent } from './auth/login/login';
 import { ForgotPasswordComponent } from './auth/forgot-password/forgot-password';
@@ -19,52 +20,59 @@ import { RecsListComponent } from './recomendaciones/recs-list/recs-list';
 import { RecsDetailComponent } from './recomendaciones/recs-detail/recs-detail';
 import { RecsPrintComponent } from './recomendaciones/recs-print/recs-print';
 
+import { authGuard } from './core/auth.guard';
+import { roleGuard } from './core/role.guard';
+import { guestGuard } from './core/guest.guard';
+
 export const routes: Routes = [
-  { path: 'login', component: LoginComponent },
-  { path: 'home', component: HomeComponent },
+  // Público solo para invitados
+  { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
+  { path: 'forgot-password', component: ForgotPasswordComponent, canActivate: [guestGuard] },
+  { path: 'reset-password', component: ResetPasswordComponent, canActivate: [guestGuard] },
 
-  { path: 'forgot-password', component: ForgotPasswordComponent },
-  { path: 'reset-password', component: ResetPasswordComponent },
+  // Protegidos (requieren sesión)
+  { path: 'home', component: HomeComponent, canActivate: [authGuard] },
 
-  // Clientes
-  { path: 'clientes', component: ClientesListComponent },
-  { path: 'clientes/nuevo', component: ClientesFormComponent },
-  { path: 'clientes/:id/editar', component: ClientesFormComponent },
-  { path: 'clientes/:id/ver', component: ClientesFormComponent },
+  // Clientes (ambos roles)
+  { path: 'clientes', component: ClientesListComponent, canActivate: [authGuard] },
+  { path: 'clientes/nuevo', component: ClientesFormComponent, canActivate: [authGuard] },
+  { path: 'clientes/:id/editar', component: ClientesFormComponent, canActivate: [authGuard] },
+  { path: 'clientes/:id/ver', component: ClientesFormComponent, canActivate: [authGuard] },
 
-  // Usuarios
-  { path: 'usuarios', component: UsuariosListComponent },
-  { path: 'usuarios/nuevo', component: UsuariosFormComponent },
-  { path: 'usuarios/:id/editar', component: UsuariosFormComponent },
-  { path: 'usuarios/:id/ver', component: UsuariosFormComponent },
+  // Usuarios (sólo admin)
+  { path: 'usuarios', component: UsuariosListComponent, canActivate: [authGuard, roleGuard(['admin'])] },
+  { path: 'usuarios/nuevo', component: UsuariosFormComponent, canActivate: [authGuard, roleGuard(['admin'])] },
+  { path: 'usuarios/:id/editar', component: UsuariosFormComponent, canActivate: [authGuard, roleGuard(['admin'])] },
+  { path: 'usuarios/:id/ver', component: UsuariosFormComponent, canActivate: [authGuard, roleGuard(['admin'])] },
 
-  // Ventas
-  { path: 'ventas', component: VentasListComponent },
-  { path: 'ventas/nueva', component: VentasFormComponent },
-  { path: 'ventas/:id/imprimir', component: VentasPrintComponent },
-  { path: 'ventas/:id/ver', component: VentasFormComponent },
+  // Ventas (ambos)
+  { path: 'ventas', component: VentasListComponent, canActivate: [authGuard] },
+  { path: 'ventas/nueva', component: VentasFormComponent, canActivate: [authGuard] },
+  { path: 'ventas/:id/imprimir', component: VentasPrintComponent, canActivate: [authGuard] },
+  { path: 'ventas/:id/ver', component: VentasFormComponent, canActivate: [authGuard] },
 
+  // Productos (ambos; si quieres que crear/editar sea solo admin, aplica roleGuard allí)
+  { path: 'productos', component: ProductosListComponent, canActivate: [authGuard] },
+  { path: 'productos/nuevo', component: ProductosFormComponent, canActivate: [authGuard] },
+  { path: 'productos/:id/editar', component: ProductosFormComponent, canActivate: [authGuard] },
+  { path: 'productos/:id/ver', component: ProductosFormComponent, canActivate: [authGuard] },
+  { path: 'producto/nuevo', component: ProductoNuevoComponent, canActivate: [authGuard] },
 
-  // Productos
-  { path: 'producto/nuevo', component: ProductoNuevoComponent },
-  { path: 'inventario/entrada/nuevo', component: EntradaInventarioFormComponent },
+  // Inventario (ambos; si quieres que sea admin, agrega roleGuard)
+  { path: 'inventario/entrada/nuevo', component: EntradaInventarioFormComponent, canActivate: [authGuard] },
 
-  // Reportes
-  { path: 'reportes', component: ReportesComponent },
-  { path: 'productos', component: ProductosListComponent },
-  { path: 'productos/nuevo', component: ProductosFormComponent },
-  { path: 'productos/:id/editar', component: ProductosFormComponent },
-  { path: 'productos/:id/ver', component: ProductosFormComponent },
+  // Reportes (sólo admin)
+  { path: 'reportes', component: ReportesComponent, canActivate: [authGuard, roleGuard(['admin'])] },
 
-  //Recs
-  { path: 'recomendaciones', component: RecsListComponent},
-  { path: 'recomendaciones/:id/ver', component: RecsDetailComponent},
-  { path: 'recomendaciones/:id', component: RecsDetailComponent},
-  { path: 'recomendaciones/:id/imprimir', component: RecsPrintComponent},
+  // Recomendaciones (ambos)
+  { path: 'recomendaciones', component: RecsListComponent, canActivate: [authGuard] },
+  { path: 'recomendaciones/:id/ver', component: RecsDetailComponent, canActivate: [authGuard] },
+  { path: 'recomendaciones/:id', component: RecsDetailComponent, canActivate: [authGuard] },
+  { path: 'recomendaciones/:id/imprimir', component: RecsPrintComponent, canActivate: [authGuard] },
 
   // redirect por defecto
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: '', redirectTo: 'home', pathMatch: 'full' },
 
   // SIEMPRE el último
-  { path: '**', redirectTo: 'login' },
+  { path: '**', redirectTo: 'home' },
 ];

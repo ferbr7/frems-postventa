@@ -252,7 +252,7 @@ FROM rec_candidates_daily
 ;
 delete from clientes where idcliente = 2;
 
-select * from recomendaciones;
+select * from recomendaciones; where idrecomendacion = 40;
 delete from recomendaciones;
 select * from recomendaciones_detalle;
 
@@ -292,3 +292,54 @@ ADD CONSTRAINT recomendaciones_estado_check
 CHECK (estado IN ('pendiente','enviada','descartada','vencida'));
 
 COMMIT;
+
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'activity_type') THEN
+    CREATE TYPE activity_type AS ENUM ('venta','cliente','recomendacion','tarea','otro');
+  END IF;
+END$$;
+
+
+-- 2) Tabla actividad
+CREATE TABLE IF NOT EXISTS actividad (
+  id            SERIAL PRIMARY KEY,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  who_user_id   INTEGER NULL,
+  what          TEXT    NOT NULL,
+  type          activity_type NOT NULL DEFAULT 'otro',
+  meta          JSONB   NULL,
+  CONSTRAINT actividad_who_fk
+    FOREIGN KEY (who_user_id)
+    REFERENCES usuarios (idusuario)
+    ON DELETE SET NULL
+);
+
+-- 3) Índices útiles
+CREATE INDEX IF NOT EXISTS idx_actividad_created_at   ON actividad (created_at);
+CREATE INDEX IF NOT EXISTS idx_actividad_who_user_id  ON actividad (who_user_id);
+CREATE INDEX IF NOT EXISTS idx_actividad_type         ON actividad (type);
+
+
+
+UPDATE usuarios
+SET password = '$2b$12$NoFBmScXU14FMeOzMod9ruHc0FKNsuwEm9wTZL4g2bC58iHGEidYe'
+WHERE idusuario = 2; 
+
+
+
+Select * from usuarios;
+
+
+select * from actividad;
+
+select * from ventas;
+
+SELECT count(*) FROM ventas
+WHERE fecha >= date_trunc('day', now() AT TIME ZONE 'UTC')
+  AND  fecha <  date_trunc('day', now() AT TIME ZONE 'UTC') + interval '1 day';
+
+
+
+

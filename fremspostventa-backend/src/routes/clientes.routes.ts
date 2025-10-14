@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import prisma from '../prisma';
-import { Prisma } from '@prisma/client';
-
+import { logActivity } from '../services/activity';
 
 export const clientesRouter = Router();
 
@@ -85,6 +84,17 @@ clientesRouter.post('/', async (req, res) => {
             },
         });
 
+        try {
+            await logActivity({
+                who_user_id: (req as any)?.user?.idusuario ?? null,
+                what: `Nuevo cliente: ${[cliente.nombre, cliente.apellido].filter(Boolean).join(' ')}`,
+                type: 'cliente',
+                meta: { idcliente: cliente.idcliente },
+            });
+        } catch (e) {
+            console.warn('[actividad] no se pudo registrar creación de cliente:', (e as any)?.message || e);
+        }
+
         return res.json({ ok: true, cliente });
     } catch (err: any) {
 
@@ -131,66 +141,66 @@ clientesRouter.get('/:id', async (req, res) => {
 
 //Método get para buscar cliente en barra de búsqueda
 clientesRouter.get('/', async (req, res) => {
-  try {
-    const search = String(req.query.search ?? '').trim();
-    const page = Math.max(1, Number(req.query.page ?? 1));
-    const size = Math.min(100, Math.max(1, Number(req.query.size ?? 5)));
-    const order = String(req.query.order ?? 'recientes');
+    try {
+        const search = String(req.query.search ?? '').trim();
+        const page = Math.max(1, Number(req.query.page ?? 1));
+        const size = Math.min(100, Math.max(1, Number(req.query.size ?? 5)));
+        const order = String(req.query.order ?? 'recientes');
 
-    const where: any = {};
+        const where: any = {};
 
-    if (search) {
-      where.OR = [
-        { nombre:   { contains: search, mode: 'insensitive' } },
-        { apellido: { contains: search, mode: 'insensitive' } },
-        { email:    { contains: search, mode: 'insensitive' } },
-        { telefono: { contains: search } },
-      ];
+        if (search) {
+            where.OR = [
+                { nombre: { contains: search, mode: 'insensitive' } },
+                { apellido: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+                { telefono: { contains: search } },
+            ];
+        }
+
+        const total = await prisma.clientes.count({ where });
+
+        const items = await prisma.clientes.findMany({
+            where,
+            orderBy: { fechaingreso: order === 'antiguos' ? 'asc' : 'desc' },
+            skip: (page - 1) * size,
+            take: size,
+            select: {
+                idcliente: true,
+                nombre: true,
+                apellido: true,
+                email: true,
+                telefono: true,
+                direccion: true,
+                fechaingreso: true,
+                ultimacompra: true,
+            },
+        });
+
+        const ids = items.map(c => c.idcliente);
+        let comprasByCliente = new Map<number, number>();
+        if (ids.length) {
+            const g = await prisma.ventas.groupBy({
+                by: ['idcliente'],
+                where: {
+                    idcliente: { in: ids },
+                    estado: { equals: 'registrada' },
+                },
+                _count: { idventa: true },
+            });
+            comprasByCliente = new Map(g.map(r => [Number(r.idcliente), Number(r._count.idventa || 0)]));
+        }
+
+        const enriched = items.map(c => ({
+            ...c,
+            compras: comprasByCliente.get(c.idcliente) ?? 0,
+        }));
+
+        return res.json({ ok: true, page, size, total, items: enriched });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ ok: false, message: 'Error listando clientes' });
     }
-
-    const total = await prisma.clientes.count({ where });
-
-    const items = await prisma.clientes.findMany({
-      where,
-      orderBy: { fechaingreso: order === 'antiguos' ? 'asc' : 'desc' },
-      skip: (page - 1) * size,
-      take: size,
-      select: {
-        idcliente: true,
-        nombre: true,
-        apellido: true,
-        email: true,
-        telefono: true,
-        direccion: true,
-        fechaingreso: true,
-        ultimacompra: true,
-      },
-    });
-
-    const ids = items.map(c => c.idcliente);
-    let comprasByCliente = new Map<number, number>();
-    if (ids.length) {
-      const g = await prisma.ventas.groupBy({
-        by: ['idcliente'],
-        where: {
-          idcliente: { in: ids },
-          estado: { equals: 'registrada' }, 
-        },
-        _count: { idventa: true },
-      });
-      comprasByCliente = new Map(g.map(r => [Number(r.idcliente), Number(r._count.idventa || 0)]));
-    }
-
-    const enriched = items.map(c => ({
-      ...c,
-      compras: comprasByCliente.get(c.idcliente) ?? 0,
-    }));
-
-    return res.json({ ok: true, page, size, total, items: enriched }); 
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ ok: false, message: 'Error listando clientes' });
-  }
 });
 
 //Método put para actualizar cliente
@@ -296,6 +306,16 @@ clientesRouter.put('/:id', async (req, res) => {
                 ultimacompra: true,
             },
         });
+        try {
+            await logActivity({
+                who_user_id: (req as any)?.user?.idusuario ?? null,
+                what: `Actualización de cliente: ${[cliente.nombre, cliente.apellido].filter(Boolean).join(' ')}`,
+                type: 'cliente',
+                meta: { idcliente: cliente.idcliente },
+            });
+        } catch (e) {
+            console.warn('[actividad] no se pudo registrar actu de cliente:', (e as any)?.message || e);
+        }
 
         return res.json({ ok: true, cliente });
     } catch (err: any) {

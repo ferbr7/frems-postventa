@@ -9,8 +9,30 @@ import { inventarioRouter } from './routes/inventario.routes';
 import { ventasRouter } from './routes/ventas.routes';
 import { recsRouter} from './routes/recs.routes';
 import { startRecsScheduler } from './recs.scheduler';
+import { homeRouter } from './routes/home.routes';
+import { auth } from './middlewares/auth';
+import { requireRole } from './middlewares/roles';
 
 const app = express();
+
+app.use(cors({
+  origin: ['http://localhost:4200'],    // tu front
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
+  credentials: true,
+}));
+
+app.options('*', cors({
+  origin: ['http://localhost:4200'],
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
+  credentials: true,
+}));
+
+app.use(express.json());
+
+// públicas:
+app.use('/api/auth', authRoutes);
 
 // Logs de depuración de rutas:
 app.use((req, _res, next) => {
@@ -27,23 +49,22 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
-// Ruta de autenticación
-app.use('/api/auth', authRoutes);
-
 //Ruta para usuarios
-app.use('/api/usuarios', usersRouter);
+app.use('/api/usuarios', auth, requireRole('admin'), usersRouter);
 
 //Ruta para clientes
-app.use('/api/clientes', clientesRouter);
+app.use('/api/clientes', auth, clientesRouter);
 
 //Ruta para productos
-app.use('/api/productos', productosRouter);
-app.use('/api/inventario', inventarioRouter);
+app.use('/api/productos', auth, productosRouter);
+app.use('/api/inventario', auth, inventarioRouter);
 
 // Ruta para ventas
-app.use('/api/ventas', ventasRouter);
+app.use('/api/ventas', auth, ventasRouter);
 
-app.use('/api/recs', recsRouter);
+app.use('/api/recs', auth, recsRouter);
+
+app.use('/api/home', auth, homeRouter);
 
 // 404 controlado
 app.use((_req, res) => {

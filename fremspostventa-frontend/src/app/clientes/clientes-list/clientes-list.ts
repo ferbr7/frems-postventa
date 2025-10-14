@@ -130,7 +130,7 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     try {
       // Puedes ajustar top_n o alert_vendedores si querés
       const { rec } = await firstValueFrom(
-        this.recs.generate({ idcliente: c.idcliente, top_n: 3 /*, alert_vendedores: true*/ })
+        this.recs.generate({ idcliente: c.idcliente, top_n: 3, alert_vendedores: true })
       );
 
       const id = Number(rec?.idrecomendacion);

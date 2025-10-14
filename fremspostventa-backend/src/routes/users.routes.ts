@@ -2,6 +2,7 @@ import { Router } from 'express';
 import prisma from '../prisma';
 import bcrypt from 'bcrypt';
 import { Prisma } from '@prisma/client';
+import { logActivity } from '../services/activity';
 
 const router = Router();
 
@@ -139,6 +140,19 @@ router.post('/', async (req, res) => {
         username: true, activo: true, fechaalta: true, idrol: true
       }
     });
+
+    try {
+      const whoId = (req as any)?.user?.idusuario ?? null;
+      await logActivity({
+        who_user_id: whoId,
+        what: `Usuario creado: ${nuevo.nombre} ${nuevo.apellido} (@${nuevo.username})`,
+        type: 'tarea',
+        meta: { idusuario: nuevo.idusuario, idrol: nuevo.idrol, activo: nuevo.activo }
+      });
+    } catch (e) {
+      console.warn('[actividad] no se pudo registrar creación de usuario:', (e as any)?.message || e);
+    }
+
     res.status(201).json({ ok: true, user: nuevo });
   } catch (err) {
     console.error(err);
@@ -148,7 +162,7 @@ router.post('/', async (req, res) => {
 
 //Método put - actualizar usuario
 router.put('/:id', async (req, res) => {
-  console.log('PUT /usuarios/:id', { id: req.params.id, body: req.body }); 
+  console.log('PUT /usuarios/:id', { id: req.params.id, body: req.body });
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) {
@@ -204,7 +218,7 @@ router.put('/:id', async (req, res) => {
           select: { idusuario: true },
         });
         if (duplicate) {
-          
+
           return res.status(409).json({ ok: false, message: 'El correo ya está en uso por otro usuario.' });
         }
         data.email = email;
@@ -223,6 +237,25 @@ router.put('/:id', async (req, res) => {
         username: true, activo: true, fechaalta: true, idrol: true
       }
     });
+
+
+    try {
+      const whoId = (req as any)?.user?.idusuario ?? null;
+      const cambios: Record<string, any> = {};
+      if ('idrol' in data) cambios.idrol = data.idrol;
+      if ('activo' in data) cambios.activo = data.activo;
+      if ('email' in data) cambios.email = data.email;
+      if ('fechaalta' in data) cambios.fechaalta = data.fechaalta;
+
+      await logActivity({
+        who_user_id: whoId,
+        what: `Usuario actualizado: ${upd.nombre} ${upd.apellido} (@${upd.username})`,
+        type: 'tarea',
+        meta: { idusuario: upd.idusuario, ...cambios }
+      });
+    } catch (e) {
+      console.warn('[actividad] no se pudo registrar actualización de usuario:', (e as any)?.message || e);
+    }
 
     return res.json({ ok: true, user: upd });
 
