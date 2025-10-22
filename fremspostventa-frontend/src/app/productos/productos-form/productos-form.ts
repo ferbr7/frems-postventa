@@ -18,8 +18,8 @@ export class ProductosFormComponent implements OnInit {
 
 
   id = 0;
-  isEdit = false; 
-  isView = false;  
+  isEdit = false;
+  isView = false;
 
   categorias = ['Fragancias M', 'Fragancias H', 'Fragancias U', 'Brumas', 'Cremas', 'Sets'];
   medidas = ['30ml', '50ml', '75ml', '100ml', '150ml', '200ml', '250ml', 'set', 'unidad'];
@@ -34,7 +34,7 @@ export class ProductosFormComponent implements OnInit {
     precioventa: [0, [Validators.required, Validators.min(0)]],
     stock: [0, [Validators.required, Validators.min(0)]],
     activo: [true],
-    duracionestimadodias: [null as number | null, []],  
+    duracionestimadodias: [null as number | null, []],
   });
 
   ngOnInit(): void {
@@ -160,4 +160,8 @@ export class ProductosFormComponent implements OnInit {
       });
     }
   }
+  returnTo: string | null =
+    (typeof history.state?.returnTo === 'string' && history.state.returnTo.startsWith('/'))
+      ? history.state.returnTo
+      : this.route.snapshot.queryParamMap.get('returnTo');
 }

@@ -135,6 +135,8 @@ model ventas_detalle {
   @@index([idventa], map: "idx_vdet_idventa")
   @@index([idventa], map: "ix_ventas_detalle_idventa")
   @@index([idproducto], map: "ix_ventas_detalle_producto")
+  @@index([idproducto], map: "idx_vdet_producto")
+  @@index([idventa], map: "idx_vdet_venta")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -156,6 +158,7 @@ model recomendaciones {
   @@index([idcliente, estado], map: "idx_recs_cliente_estado")
   @@index([fechageneracion(sort: Desc)], map: "idx_recs_fecha")
   @@index([next_action_at], map: "idx_recs_next_action")
+  @@index([fechageneracion(sort: Desc), estado], map: "idx_recs_fecha_estado")
 }
 
 model recomendaciones_detalle {

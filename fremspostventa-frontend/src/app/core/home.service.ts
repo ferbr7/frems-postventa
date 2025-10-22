@@ -1,11 +1,12 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/enviroment';
 
 @Injectable({ providedIn: 'root' })
 export class HomeService {
   private http = inject(HttpClient);
-  private API = 'http://localhost:4000/api/home';
+  private API = `${environment.apiUrl}/home`;
 
   kpis(): Observable<{ ok: boolean; kpis: {
     ventasHoy: number; ventasTrend: string;

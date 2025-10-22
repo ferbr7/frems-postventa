@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { environment } from '../../environments/enviroment';
 
 export interface VentaListRow {
   idventa: number;
@@ -23,7 +24,7 @@ export interface VentaCreateResp {
 @Injectable({ providedIn: 'root' })
 export class VentasService {
   private http = inject(HttpClient);
-  private readonly API = 'http://localhost:4000/api/ventas';
+  private readonly API = `${environment.apiUrl}/ventas`;
 
   list(opts: {
     page?: number;

@@ -108,7 +108,7 @@ export class VentasFormComponent implements OnInit {
           const g = this.fb.nonNullable.group({
             idproducto: [Number(d.idproducto), [Validators.required, Validators.min(1)]],
             cantidad: [Number(d.cantidad), [Validators.required, Validators.min(1)]],
-            precio: [{ value: Number(d.precio_unit), disabled:true}, [Validators.required, Validators.min(0)]],
+            precio: [{ value: Number(d.precio_unit), disabled: true }, [Validators.required, Validators.min(0)]],
             desc_pct: [Number(d.desc_pct ?? 0), [Validators.min(0), Validators.max(100)]],
             _stock: [0],
           });
@@ -205,6 +205,11 @@ export class VentasFormComponent implements OnInit {
       error: (err) => alert(err?.error?.message || 'Error registrando venta'),
     });
   }
+
+  returnTo: string | null =
+    (typeof history.state?.returnTo === 'string' && history.state.returnTo.startsWith('/'))
+      ? history.state.returnTo
+      : this.route.snapshot.queryParamMap.get('returnTo');
 
   volver() { this.router.navigate(['/ventas']); }
   imprimir() { this.router.navigate(['/ventas', this.id, 'imprimir']); }

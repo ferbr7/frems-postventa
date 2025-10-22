@@ -12,6 +12,7 @@ import { startRecsScheduler } from './recs.scheduler';
 import { homeRouter } from './routes/home.routes';
 import { auth } from './middlewares/auth';
 import { requireRole } from './middlewares/roles';
+import reportsRoutes from './routes/reports.routes';
 
 const app = express();
 
@@ -62,9 +63,14 @@ app.use('/api/inventario', auth, inventarioRouter);
 // Ruta para ventas
 app.use('/api/ventas', auth, ventasRouter);
 
+//Ruta para recomendaciones
 app.use('/api/recs', auth, recsRouter);
 
+//Ruta para home
 app.use('/api/home', auth, homeRouter);
+
+//Ruta para reportes
+app.use('/api/reports', auth, reportsRoutes);
 
 // 404 controlado
 app.use((_req, res) => {

@@ -1,10 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/enviroment';
 
 @Injectable({ providedIn: 'root' })
 export class InventarioService {
   private http = inject(HttpClient);
-  private readonly API = 'http://localhost:4000/api/inventario';
+  private readonly API = `${environment.apiUrl}/inventario`;
 
   crearEntrada(payload: {
     idproducto: number;

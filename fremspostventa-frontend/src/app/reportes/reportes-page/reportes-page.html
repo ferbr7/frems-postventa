@@ -1,0 +1,141 @@
+<div class="min-h-screen bg-neutral-50">
+  <div class="max-w-7xl mx-auto px-6 py-8">
+
+    <!-- Encabezado -->
+    <div class="rounded-2xl bg-gradient-to-r from-emerald-700 to-emerald-600 p-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold text-white">Reportes</h1>
+        <p class="text-emerald-100">Analítica y exportes</p>
+      </div>
+      <div class="flex gap-3">
+        <a routerLink="/home"
+          class="rounded-xl border border-emerald-200/60 bg-emerald-600/30 text-white px-4 py-2 hover:bg-white/10">
+          Volver
+        </a>
+        <button (click)="exportCsv()"
+          class="rounded-xl border border-emerald-200/50 bg-emerald-600/30 text-white px-4 py-2 hover:bg-emerald-600/40">
+          Exportar CSV
+        </button>
+        <button (click)="print()"
+          class="rounded-xl border border-emerald-200/50 bg-emerald-600/30 text-white px-4 py-2 hover:bg-emerald-600/40">
+          Imprimir
+        </button>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="mt-6 bg-white rounded-2xl border border-slate-200 shadow p-6">
+      <form [formGroup]="filtros" class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+        <div class="md:col-span-2">
+          <label class="block text-slate-700 mb-1">Tipo de reporte</label>
+          <select formControlName="tipo"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+            <option value="clientes">Clientes</option>
+            <option value="ventas">Ventas</option>
+            <option value="top">Mayor producto vendido</option>
+            <option value="ia">Recomendaciones IA</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-700 mb-1">Desde</label>
+          <input type="date" formControlName="desde"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-slate-700 mb-1">Hasta</label>
+          <input type="date" formControlName="hasta"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+        </div>
+
+        <div *ngIf="filtros.value.tipo === 'top'">
+          <label class="block text-slate-700 mb-1">Top N</label>
+          <input type="number" min="1" formControlName="topN"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+        </div>
+
+        <div class="md:col-span-1">
+          <button type="button" (click)="generar()"
+            class="w-full rounded-xl bg-emerald-600 text-white px-4 py-2.5 hover:bg-emerald-700" [disabled]="loading()">
+            {{ loading() ? 'Generando…' : 'Generar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- KPIs dinámicos -->
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4" *ngIf="kpis().length">
+      <div *ngFor="let k of kpis()" class="rounded-2xl bg-white border border-slate-200 shadow p-5">
+        <div class="text-slate-500 text-sm">{{ k.label }}</div>
+        <div class="text-2xl font-semibold text-slate-900 mt-1">{{ k.value }}</div>
+      </div>
+    </div>
+
+    <!-- “Gráfica” simple dinámica -->
+    <div *ngIf="['ventas','top','ia'].includes(filtros.value.tipo ?? '') && grafica().length"
+      class="mt-6 rounded-2xl bg-white border border-slate-200 shadow p-6">
+      <div class="text-slate-700 mb-4">Tendencia</div>
+
+      <div class="overflow-x-auto">
+        <svg [attr.width]="svgWidth()" [attr.height]="svgH">
+          <!-- eje -->
+          <line [attr.x1]="0" [attr.y1]="axisY" [attr.x2]="svgWidth()" [attr.y2]="axisY" stroke="#e5e7eb"></line>
+
+          <ng-container *ngFor="let b of svgBars()">
+            <!-- barra -->
+            <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="barW" [attr.height]="b.h" fill="rgba(16,185,129,.7)"
+              rx="4">
+              <title>{{ b.label }}: {{ b.value }}</title>
+            </rect>
+
+            <!-- etiqueta: TOP => vertical 2 líneas (rotada) / demás => 1 línea horizontal -->
+            <ng-container *ngIf="filtros.value.tipo === 'top'; else oneLineHorizontal">
+              <!-- trasladamos al centro X de la barra y un poco debajo del eje; luego rotamos -->
+              <g [attr.transform]="'translate(' + b.cx + ',' + (axisY + labelPadTop) + ') rotate(-90)'">
+                <text text-anchor="end" font-size="11" fill="#475569">
+                  <tspan x="0" y="0">{{ b.lines[0] }}</tspan>
+                  <tspan *ngIf="b.lines[1]" x="0" y="12">{{ b.lines[1] }}</tspan>
+                  <title>{{ b.label }}</title>
+                </text>
+              </g>
+            </ng-container>
+
+            <ng-template #oneLineHorizontal>
+              <text [attr.x]="b.cx" [attr.y]="axisY + tickPad" text-anchor="middle" font-size="11" fill="#475569">
+                {{ b.tick }}
+                <title>{{ b.label }}</title>
+              </text>
+            </ng-template>
+          </ng-container>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Tabla dinámica -->
+    <div class="mt-6 rounded-2xl bg-white border border-slate-200 shadow overflow-hidden" *ngIf="headers().length">
+      <table class="w-full text-left">
+        <thead class="bg-slate-50">
+          <tr class="text-slate-600 text-sm">
+            <th *ngFor="let h of headers()" class="px-5 py-3 font-medium">
+              {{ h | titlecase }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of tabla(); trackBy: trackRow" class="border-t">
+            <td *ngFor="let h of headers(); trackBy: trackHeader" class="px-5 py-3 text-slate-800">
+              {{ r[h] }}
+            </td>
+          </tr>
+          <tr *ngIf="!tabla().length">
+            <td class="px-5 py-6 text-slate-500">Sin datos para el filtro.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Estado cargando -->
+    <div *ngIf="loading()" class="mt-4 text-slate-500">Generando…</div>
+  </div>
+</div>

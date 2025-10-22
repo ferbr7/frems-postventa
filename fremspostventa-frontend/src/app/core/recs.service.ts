@@ -2,6 +2,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/enviroment';
 
 /* ===== Tipos compartidos ===== */
 
@@ -70,7 +71,7 @@ export interface RecDetail {
 @Injectable({ providedIn: 'root' })
 export class RecsService {
   private http = inject(HttpClient);
-  private readonly API = 'http://localhost:4000/api/recs';
+  private readonly API = `${environment.apiUrl}/recs`;
 
   /** Listado paginado de recomendaciones */
   list(opts: {

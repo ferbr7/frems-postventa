@@ -7,7 +7,7 @@ export const homeRouter = Router();
 homeRouter.get('/kpis', async (_req, res) => {
   try {
     // Ventas HOY / AYER: compara contra CURRENT_DATE (independiente de tz)
-    const [ventasHoyRow]  = await prisma.$queryRaw<{ count: number }[]>`
+    const [ventasHoyRow] = await prisma.$queryRaw<{ count: number }[]>`
       SELECT COUNT(*)::int AS count
       FROM ventas
       WHERE fecha = CURRENT_DATE
@@ -17,7 +17,7 @@ homeRouter.get('/kpis', async (_req, res) => {
       FROM ventas
       WHERE fecha = CURRENT_DATE - INTERVAL '1 day'
     `;
-    const ventasHoy  = ventasHoyRow?.count  ?? 0;
+    const ventasHoy = ventasHoyRow?.count ?? 0;
     const ventasAyer = ventasAyerRow?.count ?? 0;
 
     let ventasTrend = '—';
@@ -59,8 +59,26 @@ homeRouter.get('/kpis', async (_req, res) => {
 /** Actividad reciente (últimos N ítems) */
 homeRouter.get('/activity', async (req, res) => {
   try {
+    const userId = req.user!.idusuario;
+
+    let rol = req.user?.rol as string | undefined;
+    if (!rol) {
+      const u = await prisma.usuarios.findUnique({
+        where: { idusuario: userId },
+        select: { roles: { select: { nombre: true } } },
+      });
+      rol = u?.roles?.nombre ?? undefined;
+    }
+    const isAdmin = rol?.toLowerCase() === 'admin';
+
     const limit = Math.min(5, Math.max(1, Number(req.query.limit ?? 5)));
+
+    const where: any = isAdmin
+      ? {} 
+      : { OR: [{ who_user_id: userId }, { who_user_id: null }] }; 
+
     const rows = await prisma.actividad.findMany({
+      where,
       orderBy: { created_at: 'desc' },
       take: limit,
       select: {
@@ -71,6 +89,7 @@ homeRouter.get('/activity', async (req, res) => {
         usuarios: { select: { idusuario: true, nombre: true, apellido: true } },
       },
     });
+
     const items = rows.map(r => ({
       id: r.id,
       when: r.created_at,
@@ -78,6 +97,7 @@ homeRouter.get('/activity', async (req, res) => {
       type: r.type,
       who: [r.usuarios?.nombre, r.usuarios?.apellido].filter(Boolean).join(' ') || 'Sistema',
     }));
+
     res.json({ ok: true, items });
   } catch (e: any) {
     console.error('[home/activity]', e);
@@ -87,9 +107,9 @@ homeRouter.get('/activity', async (req, res) => {
 
 homeRouter.get('/top-products', async (req, res) => {
   try {
-    const days  = Math.max(1, Math.min(365, Number(req.query.days ?? 90)));
+    const days = Math.max(1, Math.min(365, Number(req.query.days ?? 90)));
     const limit = Math.max(1, Math.min(20, Number(req.query.limit ?? 5)));
-    const by    = String(req.query.by ?? 'units').toLowerCase(); // 'units' | 'amount'
+    const by = String(req.query.by ?? 'units').toLowerCase(); // 'units' | 'amount'
 
     const baseSelect = `
       SELECT
@@ -110,12 +130,12 @@ homeRouter.get('/top-products', async (req, res) => {
         : `${baseSelect} ORDER BY unidades DESC, monto DESC LIMIT ${limit}`;
 
     const rows = await prisma.$queryRawUnsafe<
-      { idproducto:number; nombre:string; unidades:number; monto:number }[]
+      { idproducto: number; nombre: string; unidades: number; monto: number }[]
     >(sql);
 
     res.json({ ok: true, items: rows });
-  } catch (e:any) {
+  } catch (e: any) {
     console.error('[home/top-products]', e);
-    res.status(500).json({ ok:false, message: e?.message || 'Error top productos' });
+    res.status(500).json({ ok: false, message: e?.message || 'Error top productos' });
   }
 });

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/enviroment';
 
 
 export interface Cliente {
@@ -18,7 +19,7 @@ export interface Cliente {
 @Injectable({ providedIn: 'root' })
 export class ClientesService {
   private http = inject(HttpClient);
-  private readonly API = 'http://localhost:4000/api';
+  private readonly API = `${environment.apiUrl}`;
 
   list(opts: { search?: string; page?: number; size?: number; order?: 'recientes' | 'antiguos' } = {}): Observable<{
     ok: boolean; page: number; size: number; total: number; items: Cliente[];

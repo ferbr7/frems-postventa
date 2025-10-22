@@ -157,7 +157,7 @@
           <!-- Acciones rápidas -->
           <div class="lg:col-span-1 space-y-3">
             <h4 class="text-neutral-900 font-semibold">Acciones rápidas</h4>
-            <a *ngFor="let a of quickActions" [routerLink]="a.link" [class.hidden]="!a.roles.includes(role)"
+            <a *ngFor="let a of quickActions" [routerLink]="a.link" [state]="{ returnTo: '/home' }" [class.hidden]="!a.roles.includes(role)"
               class="flex items-center justify-between rounded-xl bg-white px-4 py-3 border border-neutral-200 hover:bg-neutral-50">
               <span class="flex items-center gap-3 text-neutral-800 font-medium">
                 <span

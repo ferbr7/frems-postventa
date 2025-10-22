@@ -229,4 +229,8 @@ export class UsuariosFormComponent implements OnInit {
     if (this.isEdit) return 'Actualiza los datos de este usuario.';
     return 'Completa los campos para agregar un nuevo usuario.';
   }
+  returnTo: string | null =
+    (typeof history.state?.returnTo === 'string' && history.state.returnTo.startsWith('/'))
+      ? history.state.returnTo
+      : this.route.snapshot.queryParamMap.get('returnTo');
 }

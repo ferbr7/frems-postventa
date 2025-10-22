@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { environment } from '../../environments/enviroment';
 
 export interface UsuarioDTO {
   idusuario: number;
@@ -15,7 +16,7 @@ export interface UsuarioDTO {
 
 @Injectable({ providedIn: 'root' })
 export class UsersService {
-  private api = 'http://localhost:4000/api/usuarios';
+  private api = `${environment.apiUrl}/usuarios`;
 
   constructor(private http: HttpClient) { }
 
