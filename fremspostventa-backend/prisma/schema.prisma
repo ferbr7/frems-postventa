@@ -26,6 +26,7 @@ model usuarios {
   idrol               Int?
   actividad           actividad[]
   inventario_entradas inventario_entradas[]
+  password_resets     password_resets[]
   roles               roles?                @relation(fields: [idrol], references: [idrol], onDelete: NoAction, onUpdate: NoAction)
   ventas              ventas[]
 
@@ -199,6 +200,21 @@ model actividad {
   @@index([created_at], map: "idx_actividad_created_at")
   @@index([type], map: "idx_actividad_type")
   @@index([who_user_id], map: "idx_actividad_who_user_id")
+}
+
+model password_resets {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  code_hash  String    @db.VarChar(200)
+  expires_at DateTime  @db.Timestamptz(6)
+  attempts   Int       @default(0)
+  used_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  ip         String?   @db.VarChar(64)
+  usuarios   usuarios  @relation(fields: [user_id], references: [idusuario], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)], map: "idx_pwreset_created_at")
+  @@index([user_id, expires_at], map: "idx_pwreset_user_exp")
 }
 
 enum activity_type {

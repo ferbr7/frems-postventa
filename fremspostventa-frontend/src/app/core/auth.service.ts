@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { tap, map, catchError } from 'rxjs/operators';
+import { environment } from '../../environments/enviroment';
 
 /** Ajusta si tus roles se llaman distinto en backend */
 export type Role = 'admin' | 'vendedor';
@@ -19,7 +20,7 @@ export interface UserInfo {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly api = 'http://localhost:4000/api/auth';
+  private readonly api = `${environment.apiUrl}/auth`;
 
   private userSubject = new BehaviorSubject<UserInfo | null>(this.readUserFromLS());
   /** Observable para quien prefiera suscribirse */
@@ -28,7 +29,7 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     @Inject(PLATFORM_ID) private platformId: Object
-  ) {}
+  ) { }
 
   // ======= Auth base =======
   login(userOrEmail: string, password: string) {
@@ -112,4 +113,12 @@ export class AuthService {
 
   /** Acceso sincrónico al usuario (útil para guards) */
   get user(): UserInfo | null { return this.userSubject.value; }
+
+  forgot(email: string) {
+    return this.http.post(`${this.api}/forgot`, { email }, { withCredentials: true });
+  }
+
+  reset(email: string, code: string, newPassword: string) {
+    return this.http.post(`${this.api}/reset`, { email, code, newPassword }, { withCredentials: true });
+  }
 }

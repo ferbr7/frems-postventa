@@ -342,4 +342,33 @@ WHERE fecha >= date_trunc('day', now() AT TIME ZONE 'UTC')
 
 
 
+Select count(*) from recomendaciones where estado ='pendiente';
 
+select * from recomendaciones;
+select * from ventas_detalle;
+
+CREATE INDEX IF NOT EXISTS idx_ventas_fecha ON ventas (fecha);
+CREATE INDEX IF NOT EXISTS idx_vdet_venta ON ventas_detalle (idventa);
+CREATE INDEX IF NOT EXISTS idx_vdet_producto ON ventas_detalle (idproducto);
+CREATE INDEX IF NOT EXISTS idx_recs_fecha_estado ON recomendaciones (fechageneracion DESC, estado);
+
+
+
+CREATE TABLE IF NOT EXISTS password_resets (
+  id           SERIAL PRIMARY KEY,
+  user_id      INTEGER NOT NULL
+                 REFERENCES usuarios(idusuario) ON DELETE CASCADE,
+  code_hash    VARCHAR(200) NOT NULL,          -- hash (bcrypt) del código de 6 dígitos
+  expires_at   TIMESTAMPTZ NOT NULL,           -- fecha/hora de expiración
+  attempts     INTEGER NOT NULL DEFAULT 0,      -- intentos de validación
+  used_at      TIMESTAMPTZ NULL,               -- cuándo se usó (si aplica)
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ip           VARCHAR(64) NULL                -- IP opcional
+);
+
+
+CREATE INDEX IF NOT EXISTS idx_pwreset_user_exp
+  ON password_resets (user_id, expires_at);
+
+CREATE INDEX IF NOT EXISTS idx_pwreset_created_at
+  ON password_resets (created_at DESC);

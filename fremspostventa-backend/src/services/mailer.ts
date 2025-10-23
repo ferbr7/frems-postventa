@@ -13,6 +13,36 @@ const transporter = smtpEnabled
     })
   : null;
 
+export async function sendEmail(opts: {
+  to: string | string[];
+  subject: string;
+  text?: string;
+  html?: string;
+}) {
+  if (!transporter) {
+    // SMTP no configurado: no rompas el flujo, solo loggea
+    console.log('[mailer:mock]', {
+      to: opts.to,
+      subject: opts.subject,
+      text: opts.text,
+      html: opts.html ? '(html)' : undefined,
+    });
+    return { ok: false, skipped: true };
+  }
+
+  const toList = Array.isArray(opts.to) ? opts.to.join(',') : opts.to;
+
+  const info = await transporter.sendMail({
+    from: process.env.SMTP_FROM || process.env.SMTP_USER!,
+    to: toList,
+    subject: opts.subject,
+    text: opts.text,
+    html: opts.html,
+  });
+
+  return { ok: true, messageId: info.messageId };
+}
+
 /** Emails de vendedores activos (si luego asignás dueño de cliente, cámbialo aquí) */
 export async function correosVendedores(): Promise<string[]> {
   const vend = await prisma.usuarios.findMany({

@@ -14,6 +14,7 @@ import { auth } from './middlewares/auth';
 import { requireRole } from './middlewares/roles';
 import reportsRoutes from './routes/reports.routes';
 
+
 const app = express();
 
 app.use(cors({

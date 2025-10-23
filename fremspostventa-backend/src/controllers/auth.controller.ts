@@ -67,7 +67,7 @@ export async function login(req: Request, res: Response) {
 
     // Firma del token con los campos que el frontend y middlewares esperan
     const payload = { sub: user.idusuario, username: user.username, rol };
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '8h' });
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '2h' });
 
     return res.json({
       ok: true,

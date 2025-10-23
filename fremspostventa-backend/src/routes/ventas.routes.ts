@@ -4,7 +4,7 @@ import { logActivity } from '../services/activity';
 
 export const ventasRouter = Router();
 
-// === Helpers de fecha (copiados del clientes.routes.ts) ===
+
 function toDateOnlyUTC(s?: string | null): Date | null {
   if (!s) return null;
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
@@ -12,7 +12,7 @@ function toDateOnlyUTC(s?: string | null): Date | null {
   const y = Number(m[1]);
   const mo = Number(m[2]);
   const d = Number(m[3]);
-  return new Date(Date.UTC(y, mo - 1, d)); // 00:00Z (igual que clientes)
+  return new Date(Date.UTC(y, mo - 1, d));
 }
 function todayLocalISO(): string {
   const t = new Date();
@@ -27,16 +27,20 @@ function toStr(v: unknown) { return (typeof v === 'string' ? v : '').trim(); }
 // ------------------- POST /api/ventas -------------------
 ventasRouter.post('/', async (req, res) => {
   try {
-    const { fecha, idcliente, idusuario, notas, items } = req.body ?? {};
+    const { fecha, idcliente, notas, items } = req.body ?? {};
+
+    const userId = (req as any)?.user?.idusuario;
+    if (!userId) {
+      return res.status(401).json({ ok: false, message: 'No autenticado' });
+    }
+
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ ok: false, message: 'La venta debe tener al menos un producto.' });
     }
 
-    // === FECHA: igual que clientes ===
     const f = toDateOnlyUTC(fecha);
     if (!f) return res.status(400).json({ ok: false, message: 'Fecha inválida (YYYY-MM-DD).' });
 
-    // Normaliza y valida líneas
     const lines = items.map((it: any) => ({
       idproducto: Number(it.idproducto),
       cantidad: Number(it.cantidad),
@@ -84,11 +88,11 @@ ventasRouter.post('/', async (req, res) => {
     const result = await prisma.$transaction(async (tx) => {
       const venta = await tx.ventas.create({
         data: {
-          fecha: f,                        // === FECHA ===
+          fecha: f,
           subtotal, descuentot, total,
           notas: (notas ?? '') || null,
           idcliente: idcliente ? Number(idcliente) : null,
-          idusuario: idusuario ? Number(idusuario) : null,
+          idusuario: Number(userId),
         },
         select: { idventa: true }
       });
@@ -114,7 +118,7 @@ ventasRouter.post('/', async (req, res) => {
       if (idcliente) {
         await tx.clientes.update({
           where: { idcliente: Number(idcliente) },
-          data: { ultimacompra: f }       // === FECHA: igual helper ===
+          data: { ultimacompra: f }
         });
       }
 
@@ -131,10 +135,10 @@ ventasRouter.post('/', async (req, res) => {
         clienteNombre = [c?.nombre, c?.apellido].filter(Boolean).join(' ').trim() || 'Cliente';
       }
 
-      const whoId = (req as any)?.user?.idusuario ?? (Number(idusuario) || null);
+      //const whoId = (req as any)?.user?.idusuario ?? (Number(idusuario) || null);
 
       await logActivity({
-        who_user_id: whoId,
+        who_user_id: Number(userId),
         what: `Venta #${result.idventa} a ${clienteNombre}`,
         type: 'venta',
         meta: { idventa: result.idventa, total, idcliente: idcliente ? Number(idcliente) : null }
@@ -157,9 +161,8 @@ ventasRouter.get('/', async (req, res) => {
     const page = Math.max(1, Number(req.query.page ?? 1));
     const size = Math.max(1, Math.min(100, Number(req.query.size ?? 10)));
     const search = toStr(req.query.search);
-    const estado = (toStr(req.query.estado) || 'all').toLowerCase(); // registrada|cancelada|all
+    const estado = (toStr(req.query.estado) || 'all').toLowerCase();
 
-    // === Filtros de fecha con el mismo helper que clientes ===
     const fechaFrom = toDateOnlyUTC(toStr(req.query.fecha_from));
     const fechaTo = toDateOnlyUTC(toStr(req.query.fecha_to));
 
