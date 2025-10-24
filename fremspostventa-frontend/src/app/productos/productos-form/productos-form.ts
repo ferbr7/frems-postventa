@@ -21,8 +21,41 @@ export class ProductosFormComponent implements OnInit {
   isEdit = false;
   isView = false;
 
-  categorias = ['Fragancias M', 'Fragancias H', 'Fragancias U', 'Brumas', 'Cremas', 'Sets'];
-  medidas = ['30ml', '50ml', '75ml', '100ml', '150ml', '200ml', '250ml', 'set', 'unidad'];
+  categorias = [
+    'Fragancia H Cítrica',
+    'Fragancia H Amaderada',
+    'Fragancia H Oriental',
+    'Fragancia H Aromática',
+
+    'Fragancia M Floral',
+    'Fragancia M Frutal',
+    'Fragancia M Oriental',
+    'Fragancia M Gourmand',
+
+    'Fragancia U Cítrica',
+    'Fragancia U Amaderada',
+    'Fragancia U Acuática',
+
+    'Body Mist',
+    'Aceite Roll-on',
+    'Desodorante',
+    'After Shave',
+    'Hair Mist',
+    'Cremas Corporales',
+    'Set',
+    'Otro'
+  ];
+
+  medidas = [
+    // Fragancias
+    '5ml', '7.5ml', '10ml', '15ml', '30ml', '50ml', '75ml', '90ml', '100ml', '125ml', '150ml', '200ml',
+    '236ml', '250ml',
+    '8ml', '12ml',
+    '30ml', '50ml',
+    '50ml', '75ml',
+    '200g', '250g', '500ml',
+    'set', 'unidad'
+  ];
 
 
   form = this.fb.nonNullable.group({

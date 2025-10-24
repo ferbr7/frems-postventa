@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../prisma';
-import { login, register } from '../controllers/auth.controller';
+import { login, register, changePasswordFirstLogin  } from '../controllers/auth.controller';
 import { auth } from '../middlewares/auth';
 import { genCode, hashCode, compareCode, CODE_TTL_MIN, MAX_ATTEMPTS } from '../utils/password-reset';
 import { sendEmail } from '../services/mailer';
@@ -9,6 +9,7 @@ import { sendEmail } from '../services/mailer';
 const router = Router();
 router.post('/register', register);
 router.post('/login', login);
+router.post('/change-password', changePasswordFirstLogin);
 
 router.get('/me', auth, async (req, res) => {
   const u = (req as any).user;

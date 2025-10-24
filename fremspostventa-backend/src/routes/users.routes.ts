@@ -3,6 +3,8 @@ import prisma from '../prisma';
 import bcrypt from 'bcrypt';
 import { Prisma } from '@prisma/client';
 import { logActivity } from '../services/activity';
+import { genTempPassword } from '../utils/temp-password';
+import { enviarAccesoInicial } from '../services/mailer';
 
 const router = Router();
 
@@ -123,24 +125,62 @@ router.get('/:id', async (req, res) => {
 //Método post - crear usuario
 router.post('/', async (req, res) => {
   try {
-    const { nombre, apellido, email, username, password, idrol, activo, fechaalta } = req.body;
-    if (!nombre || !apellido || !email || !username || !password || !idrol || !fechaalta) {
+    const { nombre, apellido, email, username, idrol, activo } = req.body;
+
+    // Validaciones mínimas (ya NO pedimos password ni fechaalta)
+    if (!nombre || !apellido || !email || !username || !idrol) {
       return res.status(400).json({ ok: false, message: 'Campos requeridos faltantes' });
     }
 
-    const existente = await prisma.usuarios.findFirst({ where: { OR: [{ email }, { username }] } });
-    if (existente) return res.status(409).json({ ok: false, message: 'Email o username en uso' });
+    // Unicidad email/username
+    const existente = await prisma.usuarios.findFirst({
+      where: { OR: [{ email }, { username }] }
+    });
+    if (existente) {
+      return res.status(409).json({ ok: false, message: 'Email o username en uso' });
+    }
 
-    const hash = await bcrypt.hash(password, 10);
+    // 1) Generar contraseña temporal y hashear
+    const temp = genTempPassword(10);
+    const hash = await bcrypt.hash(temp, 10);
 
+    // 2) Crear usuario (fechaalta usa default de la DB)
     const nuevo = await prisma.usuarios.create({
-      data: { nombre, apellido, email, username, password: hash, idrol: Number(idrol), activo: activo ?? true, fechaalta: fechaalta ? new Date(fechaalta) : undefined, },
+      data: {
+        nombre,
+        apellido,
+        email,
+        username,
+        password: hash,
+        idrol: Number(idrol),
+        activo: activo ?? true,
+        must_change_password: true,
+      },
       select: {
-        idusuario: true, nombre: true, apellido: true, email: true,
-        username: true, activo: true, fechaalta: true, idrol: true
+        idusuario: true,
+        nombre: true,
+        apellido: true,
+        email: true,
+        username: true,
+        activo: true,
+        fechaalta: true,
+        idrol: true,
       }
     });
 
+    // 3) Enviar correo con acceso inicial (no loguear el password)
+    try {
+      await enviarAccesoInicial({
+        to: nuevo.email!,
+        nombre: [nuevo.nombre, nuevo.apellido].filter(Boolean).join(' '),
+        username: nuevo.username,
+        tempPassword: temp,
+      });
+    } catch (e) {
+      console.warn('[mailer] acceso inicial no enviado:', (e as any)?.message || e);
+    }
+
+    // 4) Registrar actividad (opcional)
     try {
       const whoId = (req as any)?.user?.idusuario ?? null;
       await logActivity({
@@ -153,10 +193,10 @@ router.post('/', async (req, res) => {
       console.warn('[actividad] no se pudo registrar creación de usuario:', (e as any)?.message || e);
     }
 
-    res.status(201).json({ ok: true, user: nuevo });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, message: 'Error creando usuario' });
+    return res.status(201).json({ ok: true, user: nuevo });
+  } catch (err: any) {
+    console.error('[usuarios/create]', err);
+    return res.status(500).json({ ok: false, message: 'Error creando usuario' });
   }
 });
 

@@ -61,8 +61,8 @@ export class HomeComponent implements OnInit {
   // ====== Datos dinámicos ======
   kpis = signal<KPI[]>([
     { label: 'Ventas hoy', value: 0, trend: '—' },
-    { label: 'Clientes activos', value: 0, trend: '—' },
-    { label: 'Alertas', value: 0, trend: '—' },
+    { label: 'Clientes activos', value: 0, trend: '✓' },
+    { label: 'Alertas', value: 0, trend: '✓'},
   ]);
   loadingKpis = signal<boolean>(true);
 
@@ -79,8 +79,8 @@ export class HomeComponent implements OnInit {
         const k = res.kpis;
         this.kpis.set([
           { label: 'Ventas hoy', value: k.ventasHoy, trend: k.ventasTrend || '—' },
-          { label: 'Clientes activos', value: k.clientesActivos, trend: '—' },
-          { label: 'Alertas', value: k.alertasPendientes, trend: '—' },
+          { label: 'Clientes activos', value: k.clientesActivos, trend: '✓' },
+          { label: 'Alertas', value: k.alertasPendientes, trend: '✓' },
         ]);
         this.loadingKpis.set(false);
       },

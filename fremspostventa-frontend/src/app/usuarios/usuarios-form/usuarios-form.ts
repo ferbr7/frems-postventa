@@ -6,6 +6,7 @@ import { UsersService } from '../../core/users.service';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { debounceTime, distinctUntilChanged, switchMap, filter as rxFilter } from 'rxjs/operators';
 import { of, Observable } from 'rxjs';
+import { environment } from '../../../environments/enviroment';
 
 @Component({
   standalone: true,
@@ -20,7 +21,7 @@ export class UsuariosFormComponent implements OnInit {
   private api = inject(UsersService);
   private http = inject(HttpClient);
 
-  private readonly API = 'http://localhost:4000/api';
+  private readonly API = `${environment.apiUrl}`;
 
   id = 0;
   isEdit = false;
@@ -35,7 +36,6 @@ export class UsuariosFormComponent implements OnInit {
     apellido: ['', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
     username: [{ value: '', disabled: true }, [Validators.required]],
-    password: [''],
     idrol: [3, [Validators.required]],
     activo: [true],
     fechaalta: [this.todayLocal(), [Validators.required]],
@@ -48,13 +48,12 @@ export class UsuariosFormComponent implements OnInit {
     const d = String(t.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   }
+
   ngOnInit() {
     this.recomputeModeFromRoute();
-
     this.router.events
       .pipe(rxFilter(e => e instanceof NavigationEnd))
       .subscribe(() => this.recomputeModeFromRoute());
-
     this.setupAutoUsername();
   }
 
@@ -70,7 +69,7 @@ export class UsuariosFormComponent implements OnInit {
 
     if (!accion) {
       const segs = this.route.pathFromRoot.flatMap(r => r.snapshot.url.map(s => s.path));
-      accion = segs[segs.length - 1] || ''; // 'ver' | 'editar' | 'nuevo' | ...
+      accion = segs[segs.length - 1] || '';
     }
 
     this.isView = accion === 'ver';
@@ -80,8 +79,6 @@ export class UsuariosFormComponent implements OnInit {
 
     if (this.isView) {
       this.form.disable();
-
-      this.form.get('password')?.reset('');
     } else {
       this.form.enable();
 
@@ -90,11 +87,8 @@ export class UsuariosFormComponent implements OnInit {
         this.form.get('apellido')?.disable({ emitEvent: false });
         this.form.get('email')?.enable({ emitEvent: false });
         this.form.get('username')?.disable({ emitEvent: false });
-        this.form.get('password')?.reset('');
-        this.form.get('password')?.disable({ emitEvent: false });
       } else {
-
-        this.form.get('password')?.enable({ emitEvent: false });
+        // creación: username permanece disabled pero lo seteamos por autosuggest
       }
     }
 
@@ -207,13 +201,21 @@ export class UsuariosFormComponent implements OnInit {
     if (this.isEdit) {
       const { idrol, activo, fechaalta, email } = this.form.getRawValue() as any;
       const payload = { idrol, activo, fechaalta, email };
-
       this.api.update(this.id, payload).subscribe(() => this.router.navigate(['/usuarios']));
       return;
     }
 
-    const payload: any = this.form.getRawValue();
-    if (!payload.password) { alert('Contraseña requerida'); return; }
+    const raw: any = this.form.getRawValue();
+    const payload = {
+      nombre: String(raw.nombre || '').trim(),
+      apellido: String(raw.apellido || '').trim(),
+      email: String(raw.email || '').trim(),
+      username: String(raw.username || '').trim(),
+      idrol: Number(raw.idrol),
+      activo: !!raw.activo,
+      fechaalta: raw.fechaalta, // si tu back usa default, podrías omitirlo
+    };
+
     this.api.create(payload).subscribe(() => this.router.navigate(['/usuarios']));
   }
 
@@ -223,12 +225,12 @@ export class UsuariosFormComponent implements OnInit {
     return 'Nuevo usuario';
   }
 
-  // --- Subtítulo dinámico ---
   get subtitle() {
     if (this.isView) return 'Consulta la información del usuario.';
     if (this.isEdit) return 'Actualiza los datos de este usuario.';
     return 'Completa los campos para agregar un nuevo usuario.';
   }
+
   returnTo: string | null =
     (typeof history.state?.returnTo === 'string' && history.state.returnTo.startsWith('/'))
       ? history.state.returnTo

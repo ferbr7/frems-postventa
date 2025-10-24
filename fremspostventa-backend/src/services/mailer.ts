@@ -105,3 +105,39 @@ Siguiente paso:
   });
   return { ok: true, messageId: info.messageId };
 }
+
+//Correo de password temporal
+
+export async function enviarAccesoInicial(params: {
+  to: string,
+  nombre?: string | null,
+  username: string,
+  tempPassword: string,
+}) {
+  if (!transporter) return { ok: false, skipped: true };
+
+  const subject = 'Tu acceso inicial – Frem’s';
+  const saludo = params.nombre ? `Hola ${params.nombre},` : 'Hola,';
+  const base = process.env.APP_BASE_URL || 'http://localhost:4200';
+
+  const text = `${saludo}
+
+Tu cuenta fue creada en el sistema de Postventa.
+
+Usuario: ${params.username}
+Contraseña temporal: ${params.tempPassword}
+
+Por seguridad, cámbiala al ingresar:
+${base}/recuperar-reset?email=${encodeURIComponent(params.to)}
+
+— Equipo Frem’s`;
+
+  const info = await transporter.sendMail({
+    from: process.env.SMTP_FROM || process.env.SMTP_USER!,
+    to: params.to,
+    subject,
+    text,
+  });
+
+  return { ok: true, messageId: info.messageId };
+}

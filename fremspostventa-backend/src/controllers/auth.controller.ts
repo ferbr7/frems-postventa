@@ -31,17 +31,16 @@ export async function register(req: Request, res: Response) {
 
 export async function login(req: Request, res: Response) {
   try {
-    const { username, password } = req.body;
+    const { username, password } = req.body ?? {};
     if (!username || !password) {
       return res.status(400).json({ ok: false, message: 'Usuario/correo y contraseña son obligatorios.' });
     }
 
-    // Permitir login por username o email y traer el nombre del rol
     const user = await prisma.usuarios.findFirst({
       where: {
         OR: [
-          { username: { equals: username, mode: 'insensitive' } },
-          { email:    { equals: username, mode: 'insensitive' } },
+          { username: { equals: String(username), mode: 'insensitive' } },
+          { email:    { equals: String(username), mode: 'insensitive' } },
         ],
         activo: true,
       },
@@ -53,19 +52,27 @@ export async function login(req: Request, res: Response) {
         email:     true,
         password:  true,
         idrol:     true,
-        roles:     { select: { nombre: true } }, // <- nombre del rol
+        roles:     { select: { nombre: true } },
+        must_change_password: true,
       },
     });
 
     if (!user) return res.status(401).json({ ok: false, message: 'Credenciales inválidas' });
 
-    const ok = await bcrypt.compare(password, user.password);
+    const ok = await bcrypt.compare(String(password), user.password);
     if (!ok) return res.status(401).json({ ok: false, message: 'Credenciales inválidas' });
 
-    // Rol como texto (fallback por si no hay relación)
-    const rol = (user.roles?.nombre || (user.idrol === 1 ? 'admin' : 'vendedor')).toLowerCase();
+    // Si es primer ingreso, forzar cambio de contraseña
+    if (user.must_change_password) {
+      return res.status(412).json({
+        ok: false,
+        code: 'MUST_CHANGE_PASSWORD',
+        email: user.email,
+        message: 'Debes cambiar tu contraseña antes de ingresar.',
+      });
+    }
 
-    // Firma del token con los campos que el frontend y middlewares esperan
+    const rol = (user.roles?.nombre || (user.idrol === 1 ? 'admin' : 'vendedor')).toLowerCase();
     const payload = { sub: user.idusuario, username: user.username, rol };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '2h' });
 
@@ -78,11 +85,52 @@ export async function login(req: Request, res: Response) {
         apellido:  user.apellido,
         email:     user.email,
         username:  user.username,
-        rol,                          
+        rol,
       },
     });
   } catch (err) {
     console.error('[auth/login] error', err);
     return res.status(500).json({ ok: false, message: 'Error al iniciar sesión' });
+  }
+}
+export async function changePasswordFirstLogin(req: Request, res: Response) {
+  try {
+    const { email, newPassword } = req.body ?? {};
+    if (!email || !newPassword) {
+      return res.status(400).json({ ok: false, message: 'Faltan email y/o nueva contraseña.' });
+    }
+
+    // Reglas de contraseña: 8+, 1 mayúscula, 1 minúscula, 1 número (ajusta si querés)
+    const strong = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!strong.test(String(newPassword))) {
+      return res.status(400).json({ ok: false, message: 'La contraseña no cumple los requisitos mínimos.' });
+    }
+
+    const user = await prisma.usuarios.findFirst({
+      where: { email: { equals: String(email), mode: 'insensitive' } },
+      select: { idusuario: true, must_change_password: true },
+    });
+
+    if (!user) return res.status(404).json({ ok: false, message: 'Usuario no encontrado.' });
+
+    if (!user.must_change_password) {
+      return res.status(409).json({ ok: false, message: 'Este usuario no requiere cambio de contraseña.' });
+    }
+
+    const hash = await bcrypt.hash(String(newPassword), 10);
+
+    await prisma.usuarios.update({
+      where: { idusuario: user.idusuario },
+      data: {
+        password: hash,
+        must_change_password: false,
+        password_changed_at: new Date(),
+      },
+    });
+
+    return res.json({ ok: true, message: 'Contraseña actualizada.' });
+  } catch (e) {
+    console.error('[auth/change-password]', e);
+    return res.status(500).json({ ok: false, message: 'Error cambiando contraseña.' });
   }
 }

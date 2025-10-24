@@ -121,4 +121,8 @@ export class AuthService {
   reset(email: string, code: string, newPassword: string) {
     return this.http.post(`${this.api}/reset`, { email, code, newPassword }, { withCredentials: true });
   }
+  changePassword(email: string, newPassword: string) {
+  return this.http.post(`${this.api}/change-password`, { email, newPassword });
+}
+
 }

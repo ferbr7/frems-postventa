@@ -15,20 +15,22 @@ model roles {
 }
 
 model usuarios {
-  idusuario           Int                   @id @default(autoincrement())
-  nombre              String                @db.VarChar(100)
-  apellido            String                @db.VarChar(100)
-  email               String                @unique @db.VarChar(150)
-  username            String                @unique @db.VarChar(50)
-  password            String
-  activo              Boolean?              @default(true)
-  fechaalta           DateTime?             @default(dbgenerated("CURRENT_DATE")) @db.Date
-  idrol               Int?
-  actividad           actividad[]
-  inventario_entradas inventario_entradas[]
-  password_resets     password_resets[]
-  roles               roles?                @relation(fields: [idrol], references: [idrol], onDelete: NoAction, onUpdate: NoAction)
-  ventas              ventas[]
+  idusuario            Int                   @id @default(autoincrement())
+  nombre               String                @db.VarChar(100)
+  apellido             String                @db.VarChar(100)
+  email                String                @unique @db.VarChar(150)
+  username             String                @unique @db.VarChar(50)
+  password             String
+  activo               Boolean?              @default(true)
+  fechaalta            DateTime?             @default(dbgenerated("CURRENT_DATE")) @db.Date
+  idrol                Int?
+  must_change_password Boolean               @default(true)
+  password_changed_at  DateTime?             @db.Timestamptz(6)
+  actividad            actividad[]
+  inventario_entradas  inventario_entradas[]
+  password_resets      password_resets[]
+  roles                roles?                @relation(fields: [idrol], references: [idrol], onDelete: NoAction, onUpdate: NoAction)
+  ventas               ventas[]
 
   @@index([idrol])
   @@index([activo])
